@@ -1,0 +1,13 @@
+{
+    "printer_name": "Phrozen Sonic Mini 8K",
+    "design_name": "Print Design Name",
+    "px_x_val": 22.0,
+    "px_y_val": 22.0,
+    "layer": 10.0,
+    "chan_w_um": 200.0,
+    "chan_h_um": 200.0,
+    "lpv_multiplier": 2.0,
+    "xbulk_val_mm": 75,
+    "ybulk_val_mm": 25,
+    "zbulk_val_mm": 15
+}
