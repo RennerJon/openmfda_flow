@@ -52,15 +52,34 @@ def run_flow(design_name, platform="h.r.3.3", mk_targets="all", force_run_deps=F
     if isinstance(mk_targets, str):
         mk_targets = [mk_targets]
     if force_run_deps:
-        mk_args =+ '-B'
-    flow_path = os.environ["OPENMFDA_ROOT"]+"/flow"
-    run_cmd = f"cd {flow_path} && make {' '.join(mk_targets)} -e DESIGN={design_name} -e PLATFORM={platform} {' '.join(mk_args)}"
-    subprocess.run(run_cmd, stdout=None, stderr=None, check=True, shell=True)
-    # subprocess.run(["cd flow"],
-    #                stdout=None, stderr=None, check=True)
-    # 
-    # subprocess.run(["make", "-e", f"DESIGN={design_name}", "-e", f"PLATFORM={platform}"],
-    #                stdout=None, stderr=None, check=True)
+        mk_args.append('-B')
+    
+    # Check for Docker execution
+    if os.environ.get("OPENMFDA_USE_DOCKER", "0") == "1":
+        print("Running flow in Docker...")
+        root = os.environ["OPENMFDA_ROOT"]
+        docker_work_dir = "/home/jovyan/openmfda_flow/flow"
+        
+        # Construct the make command string to run inside the container
+        make_cmd = f"make {' '.join(mk_targets)} -e DESIGN={design_name} -e PLATFORM={platform}"
+        if mk_args:
+             make_cmd += f" {' '.join(mk_args)}"
+
+        docker_cmd = [
+            "docker", "run", "--rm",
+            "-v", f"{root}:/home/jovyan/openmfda_flow",
+            "-w", docker_work_dir,
+            "openmfda-flow",
+            "bash", "-c", make_cmd
+        ]
+        print(f"Docker Command: {' '.join(docker_cmd)}")
+        subprocess.run(docker_cmd, check=True)
+
+    else:
+        # Existing local execution logic
+        flow_path = os.environ["OPENMFDA_ROOT"]+"/flow"
+        run_cmd = f"cd {flow_path} && make {' '.join(mk_targets)} -e DESIGN={design_name} -e PLATFORM={platform} {' '.join(mk_args)}"
+        subprocess.run(run_cmd, stdout=None, stderr=None, check=True, shell=True)
 
 ################ Generate pin constraints ################
 def write_pin_constraints(io_filename, pin_names, layer, startx=960, starty=660):

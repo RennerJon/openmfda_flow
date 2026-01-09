@@ -1,0 +1,52 @@
+language: c
+
+sudo: required
+dist: trusty
+
+compiler:
+  - gcc
+  - clang
+
+# Settings to try
+env:
+  matrix:
+    - BUILD_SYSTEM=autotools
+    - BUILD_SYSTEM=cmake
+
+before_install:
+  - sudo apt-get install automake libtool flex libxml-libxml-perl
+
+script:
+  - bison --version
+  - flex --version
+  - $CC --version
+  - which $CC
+  # workaround clang not system wide, fail on sudo make install
+  - export CC=`which $CC`
+
+  - topDir=`pwd`
+  - case $BUILD_SYSTEM in
+      autotools)
+        ./bootstrap.sh &&
+        ./configure --prefix=/usr &&
+        make distcheck &&
+        sudo make install
+        ;;
+      cmake)
+        mkdir build && cd build &&
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr &&
+        make &&
+        sudo make install
+        ;;
+      esac ;
+
+  # test
+  - admsXml -h
+
+  # run against downstream projects.
+  - cd $topDir
+  - cd testcases
+  - bash testQucs.sh    `which admsXml`
+  - bash testNgspice.sh `which admsXml`
+
+

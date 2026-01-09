@@ -1,0 +1,178 @@
+OPENMFDA FLOW - PROJECT STATUS REPORT
+Date: 2026-01-03
+Branch: phrozen_lib
+
+================================================================================
+SECTION 1: CHANGES MADE & GIT STATUS
+================================================================================
+
+[GIT STATUS]
+On branch phrozen_lib
+Your branch is up to date with 'origin/phrozen_lib'.
+
+UNTRACKED FILES (New files not yet in version control):
+  [ ] ADMS-release-2.3.7/
+  [ ] flow/designs/src/glucose_standard_assay/
+  [ ] flow/designs/src/protein_bca_assay/
+  [ ] flow/designs/test/
+  [ ] flow/designs/test1/
+  [ ] flow/platforms/test/
+  [ ] flow/platforms/test1/
+  [ ] openmfda_flow_script.py
+  [ ] release-2.3.7.tar.gz
+  [ ] run.py
+  [ ] src/openmfda_flow/__init__.py
+  [ ] tools/gui/
+
+MODIFIED FILES (Changes to tracked files):
+  [M] flow/platforms/h.r.3.3/pdk (submodule update)
+  [D] openmfda_flow.py (deleted)
+  [M] requirements.txt
+  [M] tools/p_cell_generator (submodule update)
+  [M] tools/simulation (submodule update)
+  [M] urinalysis_design_automation/design_automation.py
+  [M] urinalysis_design_automation/main.py
+
+RECENT COMMIT HISTORY (Last 10 Commits):
+  6dca864 Modified diffmix_25px and junction_25px mirroring logic to minimize routing issues with orientation changes
+  be0ab76 Updated junction geometry
+  1f350a2 Updated z height of diffmix and junction to be in line with bottom of plane. Added color.
+  ad9254f Removed urinalysis design automation files from main directory and put in own subdirectory
+  3eaebed Files to run design automation of urinalysis suite
+  59d2378 Added all files to run urinalysis design automation into own folder. Place files in main directory to run properly.
+  fc0879e Python script for modifying and rebuilding component library pieces based on printer parameters.
+  3da0709 Updated diffmix and junction geometries to use polychannel module
+  3a3dcad Move phrozen to submodule.
+  2e7ad22 Merge branch 'bgoe_latest_dev' of https://github.com/utah-MFDA/openmfda_flow into erica_dev
+
+================================================================================
+SECTION 2: TABLE OF CONTENTS (CODESPACE STRUCTURE)
+================================================================================
+Note: Hidden files/directories and large build directories are summarized.
+
+/ (Root)
+├── run.py
+├── run_mfda_docker.py
+├── openmfda_flow_script.py
+├── benchmark.py
+├── demo.v
+├── demo_configure.py
+├── library_adjust.py
+├── benchmarks.sh
+├── set_openmfda_env_vars.sh
+├── run_flow.ipynb
+├── requirements.txt
+├── pyproject.toml
+├── Dockerfile
+├── README.md
+├── LICENSE
+├── release-2.3.7.tar.gz
+├── ADMS-release-2.3.7/ [Directory]
+├── benchmarks/ [Directory] (900+ files)
+├── tests/
+│   └── basic_demo.py
+├── src/
+│   └── openmfda_flow/
+│       ├── openmfda_flow.py
+│       ├── openmfda_class.py
+│       ├── openmfda_flow_0_1.py
+│       ├── openmfda_flow_0_2.py
+│       ├── parser.out
+│       ├── parsetab.py
+│       ├── read_netlist.py
+│       ├── run_iterator.py
+│       ├── tcl_comm.py
+│       ├── replace_iter.py
+│       ├── write_replace_tcl.py
+│       ├── get_placement_data.py
+│       ├── def_grammer.py
+│       ├── def_grammer.lark
+│       ├── def_obj_grammer.py
+│       ├── def_obj_load.py
+│       ├── def_parse.py
+│       ├── verilog_grammer.lark
+│       ├── verilog_grammer.py
+│       ├── component_parse.py
+│       └── __init__.py
+├── flow/
+│   ├── Makefile
+│   ├── scripts/ (Found 40+ scripts for synthesis, placement, routing, etc.)
+│   ├── util/ (Found 25+ utility scripts)
+│   ├── designs/
+│   │   ├── h.r.3.3/
+│   │   ├── src/
+│   │   ├── test/
+│   │   └── test1/
+│   ├── platforms/
+│   │   ├── h.r.3.3/
+│   │   ├── p.m.8.k/
+│   │   ├── test/
+│   │   └── test1/
+│   └── test/
+│       ├── core_tests.sh
+│       ├── nodes.txt
+│       ├── smoke.sh
+│       └── test_helper.sh
+├── tools/
+│   ├── gui/
+│   │   ├── app.py
+│   │   └── printer_config.py
+│   ├── p_cell_generator/
+│   │   ├── Makefile
+│   │   ├── designs/
+│   │   ├── lef/
+│   │   ├── pcells/
+│   │   ├── results/
+│   │   ├── run_pytests/
+│   │   ├── util.mk
+│   │   └── verilog_param_preparse.py
+│   ├── route_scripts/
+│   │   ├── util.mk
+│   │   ├── Astar_basic_grid.py
+│   │   ├── Astr_grid.py
+│   │   ├── astar_route.py
+│   │   ├── def_obj_load.py
+│   │   ├── routing_fix.py
+│   │   ├── routing_fix_main.py
+│   │   ├── testing_files/
+│   │   └── README.md
+│   ├── scad_render/
+│   │   ├── component_parse.py
+│   │   ├── generate_tlef_json.py
+│   │   ├── generator_class.py
+│   │   ├── generator_v2.py
+│   │   ├── length_file.py
+│   │   ├── length_file_handler.py
+│   │   ├── length_file_old.py
+│   │   ├── route_scripts.py
+│   │   └── scad_pnr.py
+│   ├── simulation/
+│   │   ├── runMFDASim.py
+│   │   ├── xyceRun.py
+│   │   ├── writeSpice.py
+│   │   ├── SimulationXyce.py
+│   │   ├── Makefile
+│   │   ├── designs/
+│   │   ├── examples/
+│   │   ├── frontend/
+│   │   ├── results/
+│   │   ├── stdCellLib/
+│   │   ├── template/
+│   │   ├── testing/
+│   │   ├── testing_local/
+│   │   └── v_2_NX/
+│   └── slicer/
+│       ├── README.md
+│       ├── LICENSE
+│       ├── example-pyramid.scad
+│       ├── example-pyramid.stl
+│       ├── example.stl
+│       ├── cpp_version/
+│       ├── notebooks/
+│       ├── pyopengl/
+│       └── pyqt5/
+└── urinalysis_design_automation/
+    ├── main.py
+    ├── design_automation.py
+    ├── file_generation.py
+    └── test_dicts.py

@@ -1,7 +1,1 @@
-solidpython==1.1.3
-numpy==1.23.5
-numpy-stl==3.1.1
-pandas==1.5.2
-PyQt5==5.15.10
-Pillow==10.3.0
-OpenROAD-OpenDbPy==0.0.0
+wheel==0.45.1

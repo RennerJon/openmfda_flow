@@ -2,6 +2,7 @@ import math
 import operator
 import solid
 import solid.utils
+import sys
 import os
 import numpy as np
 import pandas as pd
@@ -541,10 +542,39 @@ def scad_pnr(db, component_file, routing_file, platform, design, def_file, resul
 
     print(f"Place and Route results are found in '{results_dir}'")
 
+    if args.stl:
+        scad_file = f"{args.results_dir}/{args.design}.scad"
+        stl_file = f"{args.results_dir}/{args.design}.stl"
+        print(f"Generating STL for '{args.design}'...")
+        
+        if args.profile:
+            profile_path = os.path.join(os.path.dirname(__file__), "..", "slicer", "profiles", f"{args.profile}.json")
+            if os.path.exists(profile_path):
+                print(f"Using Printer Profile: {args.profile}")
+                with open(profile_path, 'r') as f:
+                    print(f.read())
+            else:
+                print(f"Warning: Profile {args.profile} not found at {profile_path}")
+
+        # Ensure openscad is in path
+        if shutil.which("openscad"):
+            try:
+                subprocess.run(["openscad", "-o", stl_file, scad_file], check=True)
+                print(f"STL generated: {stl_file}")
+            except subprocess.CalledProcessError as e:
+                print(f"Error generating STL: {e}")
+        else:
+            print("Warning: OpenSCAD not found in path. Skipping STL generation.")
+
 if __name__ == "__main__":
     import argparse
+    import shutil
+    import subprocess
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('--stl', action='store_true', help="Generate STL output from SCAD.")
+    ap.add_argument('--profile', metavar='<profile>', dest='profile', type=str,
+                    help="Printer profile name.")
     ap.add_argument('--platform', metavar='<platform>', dest='platform', type=str,
                     help="Design platform.")
     ap.add_argument('--design', metavar='<design_name>', dest='design', type=str,
@@ -596,6 +626,12 @@ if __name__ == "__main__":
     if isinstance(args.lef_file, list):
         for lef in args.lef_file:
             odb.read_lef(db, lef)
+    if not args.def_file:
+        print("Error: No DEF file provided. Ensure the pnr flow completed successfully first.")
+        sys.exit(1)
+    if not os.path.exists(args.def_file):
+        print(f"Error: DEF file {args.def_file} does not exist.")
+        sys.exit(1)
     odb.read_def(db, args.def_file)
     scad_pnr(db,
              args.component_file,

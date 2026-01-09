@@ -1,5 +1,7 @@
 import os, csv, subprocess
 import time
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt 
 from matplotlib.ticker import MultipleLocator
 
@@ -184,6 +186,13 @@ def con_results(assay):
     table_str += f"\n| SAMPLES/REAGENTS | EXPECTED CON. | EVALUATED CON. | ERROR [%] |\n"
     table_str += "-" * 65
     csv_file_path = f"flow/results/{assay}/base/simulation/Chem_Eval.csv"
+    
+    if not os.path.exists(csv_file_path):
+        table_str += f"\n| ERROR: Result file not found at {csv_file_path}. Simulation may have failed. |\n"
+        table_str += "-" * 65
+        # Return empty lists or placeholders to prevent unpacking errors in main
+        return table_str, [1.0], [0.0], [0.0]
+
     with open(csv_file_path, mode="r", newline="") as file:
         reader = csv.DictReader(file)
         for row in reader:
@@ -345,6 +354,13 @@ def newton_method(i, assay, num_samples, len_list, layer_list, pitch_list, turn_
     count += 1
     table_str, error_list, expect_conc, eval_conc = con_results(assay)
     eval_list.append(eval_conc[i])
+    
+    # Initialize defaults to prevent UnboundLocalError
+    current_turns = turn_list[i][len(turn_list[i])-1]
+    a = current_turns
+    b = current_turns
+    new_serp = f"p_serpentine_{layer_list[i][len(turn_list[i])-1]}_{len_list[i][len(turn_list[i])-1]}_{pitch_list[i][len(turn_list[i])-1]}_{current_turns}"
+    
     if eval_conc[i] > expect_conc[i]:
         old_serp = f"p_serpentine_{layer_list[i][len(turn_list[i])-1]}_{len_list[i][len(turn_list[i])-1]}_{pitch_list[i][len(turn_list[i])-1]}_{turn_list[i][len(turn_list[i])-1]}"
         while eval_conc[i] > expect_conc[i]:
@@ -367,7 +383,7 @@ def newton_method(i, assay, num_samples, len_list, layer_list, pitch_list, turn_
             a = turn_list[i][len(turn_list[i])-1]
             b = a * 2
             if b > 75:
-                b == 75
+                b = 75
             turn_list[i][len(turn_list[i])-1] = b
             new_serp = f"p_serpentine_{layer_list[i][len(turn_list[i])-1]}_{len_list[i][len(turn_list[i])-1]}_{pitch_list[i][len(turn_list[i])-1]}_{turn_list[i][len(turn_list[i])-1]}"
             error_list, expect_conc, eval_conc, result, max_x = update_flow(assay, num_samples, old_serp, new_serp, serp_num, max_x, zero)
@@ -487,7 +503,7 @@ def min_error(i, len_list, layer_list, pitch_list, turn_list, error_condition, a
         # Assign optimal time
         try:
             opt_time
-        except NameError or UnboundLocalError:
+        except (NameError, UnboundLocalError):
             opt_time = end_time - start_time
         # Replace current design with best design
         command = f"cp flow/results/{assay}/base/2_place_stored.def flow/results/{assay}/base/2_place.def"

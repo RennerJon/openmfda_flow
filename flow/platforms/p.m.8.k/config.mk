@@ -23,7 +23,7 @@ else
 # Locally built distribution files
 #ROOT_DIR=$(PLATFORM_DIR)/pdk/Components
 ROOT_DIR=$(PLATFORM_DIR)/pdk
-include $(PLATFORM_DIR)/pdk/Componets/Makefile
+include $(PLATFORM_DIR)/pdk/Components/Makefile
 export LIBRARY_DEPS = $(SC_LEF) $(TECH_LEF) $(LIB_FILES) $(SCAD_COMPONENT_LIBRARY) $(SCAD_ROUTING_LIBRARY) $(GDS_FILES) $(XYCE_LIB)
 endif
 

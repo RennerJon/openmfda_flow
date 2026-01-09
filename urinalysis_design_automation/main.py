@@ -1,7 +1,7 @@
 # main.py
 from file_generation import file_generation, conc_ratio
 from design_automation import min_error, init_mix, con_results
-import subprocess, time, random, csv
+import subprocess, time, random, csv, os, sys
 
 
 # Collect platform information
@@ -100,7 +100,20 @@ def main(assay, platform, num_samples, input_dict, error_condition, start_time, 
     # Generate necessary files
     file_generation(platform, assay, num_samples, input_dict)
     # Run flow
-    subprocess.run(["python3", f"flow/designs/{platform}/{assay}/{assay}.py"])
+    # Add src to PYTHONPATH so the generated script can find openmfda_flow package
+    env = os.environ.copy()
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    src_path = os.path.join(repo_root, "src")
+    env["PYTHONPATH"] = env.get("PYTHONPATH", "") + os.pathsep + src_path
+    
+    print(f"Running subprocess with PYTHONPATH including: {src_path}")
+    result = subprocess.run(["python3", f"flow/designs/{platform}/{assay}/{assay}.py"], env=env)
+    
+    if result.returncode != 0:
+        print("Flow execution failed. Aborting optimization.")
+        # Return dummy values or raise error to stop processing
+        return [], 0, 0, [], []
+
     print(con_results(assay)[0])
     # Optimize design
     ratio_dict, length_dict = conc_ratio(input_dict, num_samples)

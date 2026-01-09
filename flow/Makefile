@@ -159,7 +159,7 @@ export NUM_CORES := $(NPROC)
 
 #-------------------------------------------------------------------------------
 # setup all commands used within this flow
-TIME_CMD=/usr/bin/time --verbose
+TIME_CMD=/usr/bin/time
 # TIME_TEST = $(shell $(TIME_CMD) echo foo 2>/dev/null)
 # ifeq (, $(strip $(TIME_TEST)))
 #   TIME_CMD = time
@@ -174,6 +174,7 @@ OPENROAD_ARGS            = -no_init $(OR_ARGS)
 OPENROAD_CMD             = $(OPENROAD_EXE) -exit $(OPENROAD_ARGS)
 OPENROAD_NO_EXIT_CMD     = $(OPENROAD_EXE) $(OPENROAD_ARGS)
 OPENROAD_GUI_CMD         = $(OPENROAD_EXE) -gui $(OR_ARGS)
+PYTHON_CMD              ?= python3
 XYCE_CMD                = Xyce
 KLAYOUT_CMD             ?= $(shell command -v klayout)
 
@@ -246,10 +247,10 @@ $(WRAPPED_LIBS):
 	sed 's/library(\(.*\))/library(\1_mod)/g' $(filter %$(notdir $(@:_mod.lib=.lib)),$(WRAP_LIBS)) | sed 's/cell(\(.*\))/cell(\1_mod)/g' > $@
 
 #include ../tools/verilog_preparser/Makefile
-#include $(FLOW_HOME)/../tools/p_cell_generator/util.mk
+include $(FLOW_HOME)/../tools/p_cell_generator/util.mk
 
-#.PHONY: gen_pcells
-#gen_pcells: $(PCELL_MERGE_LEF)
+.PHONY: gen_pcells
+gen_pcells: $(PCELL_MERGE_LEF)
 
 
 ifdef FIX_DEF
@@ -600,7 +601,7 @@ $(RESULTS_DIR)/xyce_run.config: $(XYCE_LIB)
 #$(RESULTS_DIR)/simulation/$(DESIGN_NICKNAME)_xyceOut.csv: $(RESULTS_DIR)/4_final.scad $(RESULTS_DIR)/4_final.v $(RESULTS_DIR)/1_synth.v $(SIMULATION_CONFIG) $(RESULTS_DIR)/xyce_run.config
 $(RESULTS_DIR)/simulation/$(DESIGN_NICKNAME)_xyceOut.csv: $(RESULTS_DIR)/$(DESIGN)_base.scad $(RESULTS_DIR)/1_synth.v $(SIMULATION_CONFIG) $(RESULTS_DIR)/xyce_run.config
 	mkdir -p $(RESULTS_DIR)/simulation
-	$(TIME_CMD) python3 $(SIMULATION_SCRIPT) \
+	$(TIME_CMD) $(PYTHON_CMD) $(SIMULATION_SCRIPT) \
 		$(SIMULATION_ARGS) $(XYCE_SCRIPT_ARGS) \
 		--netlist $(RESULTS_DIR)/4_final.v \
 		--sim_config $(SIMULATION_CONFIG) \
@@ -659,7 +660,7 @@ endif
 #$(RESULTS_DIR)/4_final.scad: $(RESULTS_DIR)/4_final.def $(LIBRARY_DEPS)
 $(RESULTS_DIR)/4_final.scad $(RESULTS_DIR)/$(DESIGN)_base.scad: $(RESULTS_DIR)/4_final.def $(LIBRARY_DEPS)
 	mkdir -p "$(RESULTS_DIR)"
-	$(TIME_CMD) python3 $(SCAD_SCRIPT) $(SCAD_ARGS) \
+	$(TIME_CMD) $(PYTHON_CMD) $(SCAD_SCRIPT) $(SCAD_ARGS) \
 		--def_file $< \
         --design ${DESIGN} \
 				--scad_out_file $(RESULTS_DIR)/$(DESIGN)_base.scad \
@@ -675,7 +676,7 @@ $(RESULTS_DIR)/4_final.scad $(RESULTS_DIR)/$(DESIGN)_base.scad: $(RESULTS_DIR)/4
 	$(TIME_CMD) openscad -m make -o $@ -d $@.deps $< 2>&1 | tee $@.log
 
 %.slices: %.stl
-	$(TIME_CMD) xvfb-run python3 ../tools/slicer/pyqt5/app_qt.py $< ${LAYER_HEIGHT} $@ 2>&1 | tee $@.log
+	$(TIME_CMD) xvfb-run $(PYTHON_CMD) ../tools/slicer/pyqt5/app_qt.py $< ${LAYER_HEIGHT} $@ 2>&1 | tee $@.log
 
 ${RESULTS_DIR}/${DESIGN}.${PLATFORM}.zip: ${RESULTS_DIR}/${DESIGN}.slices
 	7z a -tzip $@ ${RESULTS_DIR}
