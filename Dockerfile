@@ -3,15 +3,16 @@ FROM openroad/orfs:latest
 # Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# We are on Ubuntu 22.04 base (likely)
+# We are on Ubuntu 22.04 base
 # Install dependencies not in ORFS
 # ORFS has yosys, klayout, openroad.
-# We need openscad, time, python3-pip, libgl1
+# We need openscad, time, python3-pip, libgl1, libx11-6
 
 RUN apt-get update && apt-get install -y \
     openscad \
     time \
     curl \
+    wget \
     python3-pip \
     libgl1-mesa-glx \
     libx11-6 \
@@ -45,15 +46,16 @@ RUN sed -i 's/==.*//g' /tmp/requirements.txt
 # Install python dependencies
 RUN pip3 install --no-cache-dir --upgrade pip \
     && pip3 install --no-cache-dir -r /tmp/requirements.txt \
-    && pip3 install --no-cache-dir opendbpy
+    && pip3 install --no-cache-dir opendbpy matplotlib pandas
 
 # Install Miniforge for multi-arch Xyce support
 ENV CONDA_DIR=/opt/conda
 ENV PATH=$CONDA_DIR/bin:$PATH
-RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" \
-    && bash Miniforge3-$(uname)-$(uname -m).sh -b -p $CONDA_DIR \
-    && rm Miniforge3-$(uname)-$(uname -m).sh \
-    && mamba install -y -c vlsida-eda xyce \
+RUN wget -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" \
+    && bash Miniforge3.sh -b -p $CONDA_DIR \
+    && rm Miniforge3.sh
+
+RUN mamba install -y -c vlsida-eda xyce \
     && mamba clean --all -y
 
 
@@ -66,6 +68,7 @@ WORKDIR ${HOME}/openmfda_flow
 
 # Environment
 ENV OPENMFDA_ROOT=${HOME}/openmfda_flow
+ENV PYTHONPATH=${HOME}/openmfda_flow/src
 # Force python command to python3 (system python)
 ENV PYTHON_CMD=python3
 

@@ -1,6 +1,6 @@
 # OpenMFDA: Open-Source Microfluidic Design Automation
 
-OpenMFDA is a hardware-description-language (HDL) based toolchain for the automated design, simulation, and 3D printing of microfluidic devices. By bridging the gap between Electronic Design Automation (EDA) and Bio-Engineering, it allows researchers to synthesize complex fluidic circuits from Verilog-AMS specifications.
+OpenMFDA is a hardware-description-language (HDL) based toolchain for the automated design, simulation, and 3D printing of microfluidic devices. By bridging the gap between Electronic Design Automation (EDA) and Bioengineering, it allows researchers to synthesize complex fluidic circuits from Verilog-AMS specifications.
 
 ## 🚀 Quick Start (Cross-Platform)
 
@@ -13,8 +13,8 @@ This project is fully containerized. To ensure compatibility across Windows, mac
 ### Installation
 1. **Clone the repo:**
    ```bash
-   git clone https://github.com/[your-username]/open-mfda.git
-   cd open-mfda
+   git clone https://github.com/rennerjones/openmfda_flow.git
+   cd openmfda_flow
    ```
 
 2. **Open in VS Code:**

@@ -22,11 +22,9 @@ def run_benchmark(design, comsol_file, platform="standard"):
     # Using Docker auto-detection from main.py
     cmd = [sys.executable, main_script, "--sim", "--design", design, "--work_dir", f"./benchmarks/{design}"]
     
-    # Check if we need to set specific paths looking at main.py inputs. 
-    # For now assuming standard project structure or simple arguments.
-    # If the design is in benchmarks/ folder, we might need to be careful about paths.
-    
-    # Let's assume the user runs this from the project root for now
+    # Assuming standard project structure or simple arguments.
+    # If the design is in benchmarks/ folder, be careful about paths.
+    # Assuming the user runs this from the project root for now
     
     try:
         subprocess.run(cmd, check=True)

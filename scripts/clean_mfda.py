@@ -17,9 +17,7 @@ def clean_project():
         ".mypy_cache",
         "build",
         "dist",
-        ".venv", # Be careful with this one, maybe prompt? But user said 'clean workspace'
-        # ".venv" - usually we don't delete envs in a simple clean script unless specified. 
-        # I'll stick to caches.
+        *([".venv"] if input("Remove .venv? (y/N): ").lower() == "y" else []),
     ]
     
     # Patterns to remove

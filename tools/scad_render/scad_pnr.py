@@ -4,9 +4,13 @@ import solid
 import solid.utils
 import sys
 import os
+import shutil
 import numpy as np
 import pandas as pd
-import opendbpy as odb
+try:
+    import odb
+except ImportError:
+    import opendbpy as odb
 from functools import reduce
 class Params():
     def __init__(self, db):
@@ -165,7 +169,29 @@ class place:
             xd = x/def_scale_
             yd = y/def_scale_
             zd = bottom_layer_/layer_
-            yield scad_std_cell.__dict__[macro](xd, yd, zd, orient)
+            try:
+                yield scad_std_cell.__dict__[macro](xd, yd, zd, orient)
+            except KeyError:
+                # Attempt P-Cell parsing
+                # Macro name might be BaseName_Param1_Param2...
+                # e.g. p_serpentine_1_180_30_8 -> p_serpentine_1(..., 180, 30, 8)
+                found = False
+                # Sort bases by length desc to match longest prefix (avoid matching p_serpentine when p_serpentine_1 exists)
+                candidates = sorted([k for k in scad_std_cell.__dict__ if not k.startswith('__')], key=len, reverse=True)
+                for base in candidates:
+                    if macro.startswith(base) and len(macro) > len(base) and macro[len(base)] == '_':
+                         suffix = macro[len(base)+1:]
+                         try:
+                             params = [float(p) if '.' in p else int(p) for p in suffix.split('_')]
+                             print(f"DEBUG: Resolved P-Cell {macro} -> {base} with params {params}")
+                             yield scad_std_cell.__dict__[base](xd, yd, zd, orient, *params)
+                             found = True
+                             break
+                         except ValueError:
+                             continue # Not purely numeric params, maybe not match
+                if not found:
+                     print(f"Error: Macro {macro} not found in SCAD library.")
+                     raise
 
     def place_components(self):
         components_placed = list(self.get_components())
@@ -235,7 +261,8 @@ class route:
                 (point, prop) = vals
                 if len(point) == 2:
                     # By default, no extension means half the width.
-                    ext = dimm_x / 2
+                    # using 0.6 to ensure overlap
+                    ext = dimm_x * 0.6
                     point = (point[0], point[1], ext)
                 if last is not None:
                     yield (layer, last, point)
@@ -413,7 +440,8 @@ class pin_place:
                     y = (ay + by)/2
                     z_top = z_bdim_
                     if contain_x_left and contain_x_right and contain_y_bottom and contain_y_top:
-                        p0 = [x, y, z_bot]
+                        # slight overlap for z (10% of layer height)
+                        p0 = [x, y, z_bot - (self.params.layer_ * 0.1)]
                         p1 = [x, y, z_top]
                         connect_matrix = [["z", p1, 0]]
                         pins_placed.append(scad_routing.routing(p0, connect_matrix, dimm))
@@ -473,12 +501,31 @@ class scad_generation:
         os.makedirs(output_dir, exist_ok=True)
         out_file = os.path.join(output_dir, design + "_components.scad")
 
+        # Copy dependencies referenced in component_file
+        comp_dir = os.path.dirname(component_file)
         with open(component_file) as f:
-            with open(out_file, "w") as f1:
-                f1.write(f"use <{design}_routing.scad>\n")
-                f1.write(f"px = {px};\nlayer = {layer};\nlpv = {lpv};\n\n")
-                for line in f:
-                    f1.write(line)
+            content = f.read()
+        
+        for line in content.splitlines():
+            line = line.strip()
+            if line.startswith('use <') and line.endswith('>'):
+                # Extract filename: use <filename.scad>
+                ref_file = line[5:-1]
+                # Check if it exists in component directory
+                src_path = os.path.join(comp_dir, ref_file)
+                if os.path.exists(src_path):
+                    dst_path = os.path.join(output_dir, os.path.basename(ref_file))
+                    if not os.path.exists(dst_path):
+                        try:
+                            shutil.copy2(src_path, dst_path)
+                            print(f"DEBUG: Copied dependency {ref_file} to results.")
+                        except Exception as e:
+                            print(f"Warning: Failed to copy dependency {ref_file}: {e}")
+
+        with open(out_file, "w") as f1:
+            f1.write(f"use <{design}_routing.scad>\n")
+            f1.write(f"px = {px};\nlayer = {layer};\nlpv = {lpv};\n\n")
+            f1.write(content)
         return out_file
 
 def scad_pnr(db, component_file, routing_file, platform, design, def_file, results_dir, px, layer, bottom_layer, lpv, xbulk, ybulk, zbulk, xchip, ychip, pitch, res, dimm_file = None):
@@ -494,9 +541,15 @@ def scad_pnr(db, component_file, routing_file, platform, design, def_file, resul
     print("SCAD generation complete\n")
 
     print(f"Importing generated SCAD for design '{design}'")
-    global scad_routing, scad_std_cell
-    scad_std_cell   = solid.import_scad(scad_std_file)
-    scad_routing    = solid.import_scad(scad_routing_file)
+    cwd = os.getcwd()
+    try:
+        # Switch to results dir to force relative path imports in generated logic
+        os.chdir(results_dir)
+        global scad_routing, scad_std_cell
+        scad_std_cell   = solid.import_scad(os.path.basename(scad_std_file))
+        scad_routing    = solid.import_scad(os.path.basename(scad_routing_file))
+    finally:
+        os.chdir(cwd)
     print(f"SCAD import for '{design}' complete\n")
 
     print(f"The design parameters for '{design}' are:")
@@ -523,8 +576,8 @@ def scad_pnr(db, component_file, routing_file, platform, design, def_file, resul
     interconnect, pins = pin_place(db, params).place_interconnect()
     marker = add_marker(params).marker()
     negative = components + pinholes + pins + marker + solid.color("orange")(routing)
-    #model = bulk - negative  + solid.color("blue", alpha=0.1)(interconnect)
-    model = negative
+    model = bulk - negative  + solid.color("blue", alpha=0.1)(interconnect)
+    #model = negative
     print("Build complete\n")
 
     route(db, params).report_route_lengths(results_dir, design)
@@ -535,6 +588,38 @@ def scad_pnr(db, component_file, routing_file, platform, design, def_file, resul
                               file_header=f"$fn = {params.res_};",
                               include_orig_code=False)
     print(f"Rendering complete\n")
+
+    # Post-process the generated SCAD file to ensure relative paths
+    out_scad_path = f"{results_dir}/{design}.scad"
+    if os.path.exists(out_scad_path):
+        print(f"DEBUG: Post-processing {out_scad_path} for relative paths...")
+        with open(out_scad_path, 'r') as f:
+            content = f.read()
+        
+        # Replace absolute paths with basenames for portability
+        # Look for "use </absolute/path/to/file.scad>" -> "use <file.scad>"
+        lines = content.splitlines()
+        new_lines = []
+        modified_count = 0
+        for line in lines:
+            if line.strip().startswith('use <') and '/' in line:
+                # Extract path
+                start = line.find('<') + 1
+                end = line.find('>')
+                if start > 0 and end > start:
+                    full_path = line[start:end]
+                    basename = os.path.basename(full_path)
+                    print(f"DEBUG: Replacing '{full_path}' with '{basename}'")
+                    line = f"use <{basename}>"
+                    modified_count += 1
+            new_lines.append(line)
+        
+        if modified_count > 0:
+            with open(out_scad_path, 'w') as f:
+                f.write('\n'.join(new_lines))
+            print(f"Enforced relative paths in SCAD output ({modified_count} lines updated).")
+        else:
+            print("No absolute paths found to replace.")
 
     print("------------------------------")
     print("SCAD Place and Route complete")
@@ -568,7 +653,7 @@ def scad_pnr(db, component_file, routing_file, platform, design, def_file, resul
 
 if __name__ == "__main__":
     import argparse
-    import shutil
+
     import subprocess
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -581,7 +666,7 @@ if __name__ == "__main__":
                     help="The design name.")
     ap.add_argument('--def_file', metavar='<path>', dest='def_file', type=str,
                     help="Path to the .def file from OpenROAD flow.")
-    ap.add_argument('--lef_file', metavar='<path>', dest='lef_file', type=str, nargs='+',
+    ap.add_argument('--lef_file', metavar='<path>', dest='lef_file', type=str, action='append',
                     help="Path to the .lef file from OpenROAD flow.")
     ap.add_argument('--routing_file', metavar='<path>', dest='routing_file', type=str,
                     help="Path to the scad routing definitions.")
@@ -620,19 +705,36 @@ if __name__ == "__main__":
     args = ap.parse_args()
 
     db = odb.dbDatabase.create()
-    odb.read_lef(db, args.tlef_file)
+    print(f"DEBUG: Reading TLEF: {args.tlef_file}")
+    try:
+        odb.read_lef(db, args.tlef_file)
+    except Exception as e:
+        print(f"Error reading TLEF {args.tlef_file}: {e}")
+        # TLEF is critical usually, but let's see.
+
     if isinstance(args.lef_file, str):
-        odb.read_lef(db, args.lef_file)
+        print(f"DEBUG: Reading LEF (str): {args.lef_file}")
+        try:
+            odb.read_lef(db, args.lef_file)
+        except Exception as e:
+            print(f"Error reading LEF {args.lef_file}: {e}")
+
     if isinstance(args.lef_file, list):
         for lef in args.lef_file:
-            odb.read_lef(db, lef)
+            print(f"DEBUG: Reading LEF (list item): {lef}")
+            try:
+                odb.read_lef(db, lef)
+            except Exception as e:
+                print(f"Error reading LEF {lef}: {e}")
     if not args.def_file:
         print("Error: No DEF file provided. Ensure the pnr flow completed successfully first.")
         sys.exit(1)
     if not os.path.exists(args.def_file):
         print(f"Error: DEF file {args.def_file} does not exist.")
         sys.exit(1)
-    odb.read_def(db, args.def_file)
+    # Patch for ODB API which expects tech, not db
+    tech = db.getTech()
+    odb.read_def(tech, args.def_file)
     scad_pnr(db,
              args.component_file,
              args.routing_file,

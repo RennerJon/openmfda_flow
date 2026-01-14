@@ -1,9 +1,44 @@
 OPENMFDA FLOW - PROJECT STATUS REPORT
-Date: 2026-01-03
+Date: 2026-01-13
 Branch: phrozen_lib
 
 ================================================================================
-SECTION 1: CHANGES MADE & GIT STATUS
+SECTION 1: RECENT ACHIEVEMENTS & FIXES
+================================================================================
+
+[CRITICAL FIXES]
+1.  **SCAD Generation & Portability:**
+    *   Resolved "Can't open library" errors by implementing a post-processing step in `scad_pnr.py` that enforces relative paths in generated `.scad` files.
+    *   Restored bulk geometry generation (boolean subtraction) so chip body is visible in 3D viewer.
+    *   Fixed "No DEF file provided" error by correcting argument propagation in `app.py`.
+
+2.  **GUI Stability:**
+    *   Fixed initialization crash (AttributeError) by reordering widget setup in `OpenMFDAGUI.__init__`.
+    *   Enhanced "Sim & Export" tab with auto-populating dropdowns for Design and Platform.
+    *   Added auto-fill logic for "Input DEF File" to streamline the `myurinalysis` demo flow.
+
+3.  **Printer Profiling:**
+    *   Added `phrozen_mini8k.json` (Resin, 22µm resolution).
+    *   Corrected `phrozen_mini4k.json` (Resin, 35µm resolution).
+    *   Updated `scad_pnr.py` to support resin-specific parameters (exposure times) in future if needed (currently using profile for metadata).
+
+4.  **Benchmarking Framework:**
+    *   Implemented Phase 3 benchmarking and print profiles.
+
+5.  **Design Automation Refactoring:**
+    *   Moved `urinalysis_design_automation` files to their own subdirectory to declutter root.
+    *   Ensured necessary files are present for running the suite.
+
+6.  **Component Library Updates:**
+    *   Updated `diffmix` and `junction` geometries (Z-height, mirroring logic) for improved routing reliability and 3D visualization.
+
+[CURRENT STATUS]
+- **End-to-End Flow:** Verified functional for `myurinalysis` on `h.r.3.3` platform.
+- **Docker Integration:** Fully operational; `main.py` correctly orchestrates Docker containers for PNR and SCAD gen.
+- **3D Modeling:** Successfully generating `.scad` and `.stl` files viewable on local host.
+
+================================================================================
+SECTION 2: CHANGES MADE & GIT STATUS
 ================================================================================
 
 [GIT STATUS]
@@ -23,6 +58,8 @@ UNTRACKED FILES (New files not yet in version control):
   [ ] run.py
   [ ] src/openmfda_flow/__init__.py
   [ ] tools/gui/
+  [ ] tools/slicer/profiles/phrozen_mini8k.json
+  [ ] tools/slicer/profiles/phrozen_mini4k.json
 
 MODIFIED FILES (Changes to tracked files):
   [M] flow/platforms/h.r.3.3/pdk (submodule update)
@@ -32,8 +69,12 @@ MODIFIED FILES (Changes to tracked files):
   [M] tools/simulation (submodule update)
   [M] urinalysis_design_automation/design_automation.py
   [M] urinalysis_design_automation/main.py
+  [M] tools/scad_render/scad_pnr.py
+  [M] tools/gui/app.py
+  [M] tools/runners.py
 
 RECENT COMMIT HISTORY (Last 10 Commits):
+  5a0f153 feat: phase 3 implemented benchmarking and print profiles
   6dca864 Modified diffmix_25px and junction_25px mirroring logic to minimize routing issues with orientation changes
   be0ab76 Updated junction geometry
   1f350a2 Updated z height of diffmix and junction to be in line with bottom of plane. Added color.
@@ -43,15 +84,14 @@ RECENT COMMIT HISTORY (Last 10 Commits):
   fc0879e Python script for modifying and rebuilding component library pieces based on printer parameters.
   3da0709 Updated diffmix and junction geometries to use polychannel module
   3a3dcad Move phrozen to submodule.
-  2e7ad22 Merge branch 'bgoe_latest_dev' of https://github.com/utah-MFDA/openmfda_flow into erica_dev
 
 ================================================================================
-SECTION 2: TABLE OF CONTENTS (CODESPACE STRUCTURE)
+SECTION 3: TABLE OF CONTENTS (CODESPACE STRUCTURE)
 ================================================================================
 Note: Hidden files/directories and large build directories are summarized.
 
 / (Root)
-├── run.py
+├── main.py (Entry Point)
 ├── run_mfda_docker.py
 ├── openmfda_flow_script.py
 ├── benchmark.py
@@ -73,7 +113,6 @@ Note: Hidden files/directories and large build directories are summarized.
 │   └── basic_demo.py
 ├── src/
 │   └── openmfda_flow/
-│       ├── openmfda_flow.py
 │       ├── openmfda_class.py
 │       ├── openmfda_flow_0_1.py
 │       ├── openmfda_flow_0_2.py
@@ -99,11 +138,13 @@ Note: Hidden files/directories and large build directories are summarized.
 │   ├── scripts/ (Found 40+ scripts for synthesis, placement, routing, etc.)
 │   ├── util/ (Found 25+ utility scripts)
 │   ├── designs/
+│   │   ├── standard/ (demo_verification, myurinalysis)
 │   │   ├── h.r.3.3/
 │   │   ├── src/
 │   │   ├── test/
 │   │   └── test1/
 │   ├── platforms/
+│   │   ├── standard/
 │   │   ├── h.r.3.3/
 │   │   ├── p.m.8.k/
 │   │   ├── test/
@@ -117,15 +158,7 @@ Note: Hidden files/directories and large build directories are summarized.
 │   ├── gui/
 │   │   ├── app.py
 │   │   └── printer_config.py
-│   ├── p_cell_generator/
-│   │   ├── Makefile
-│   │   ├── designs/
-│   │   ├── lef/
-│   │   ├── pcells/
-│   │   ├── results/
-│   │   ├── run_pytests/
-│   │   ├── util.mk
-│   │   └── verilog_param_preparse.py
+│   ├── p_cell_generator/ (Submodule)
 │   ├── route_scripts/
 │   │   ├── util.mk
 │   │   ├── Astar_basic_grid.py
@@ -146,24 +179,13 @@ Note: Hidden files/directories and large build directories are summarized.
 │   │   ├── length_file_old.py
 │   │   ├── route_scripts.py
 │   │   └── scad_pnr.py
-│   ├── simulation/
-│   │   ├── runMFDASim.py
-│   │   ├── xyceRun.py
-│   │   ├── writeSpice.py
-│   │   ├── SimulationXyce.py
-│   │   ├── Makefile
-│   │   ├── designs/
-│   │   ├── examples/
-│   │   ├── frontend/
-│   │   ├── results/
-│   │   ├── stdCellLib/
-│   │   ├── template/
-│   │   ├── testing/
-│   │   ├── testing_local/
-│   │   └── v_2_NX/
+│   ├── simulation/ (Submodule)
 │   └── slicer/
-│       ├── README.md
-│       ├── LICENSE
+│       ├── profiles/
+│       │   ├── bambu_x1c.json
+│       │   ├── neptune4_plus.json
+│       │   ├── phrozen_mini8k.json
+│       │   └── phrozen_mini4k.json
 │       ├── example-pyramid.scad
 │       ├── example-pyramid.stl
 │       ├── example.stl

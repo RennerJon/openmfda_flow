@@ -12,7 +12,7 @@ from printer_config import PrinterConfigurator
 
 # Import main flow logic
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../urinalysis_design_automation")))
-import main as flow_main
+import urinalysis_main as flow_main
 
 # Import runners
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -27,17 +27,20 @@ class ScadWorker(QThread):
     log_signal = pyqtSignal(str)
     finished_signal = pyqtSignal()
     
-    def __init__(self, design, platform, use_docker=False):
+    
+    def __init__(self, design, platform, use_docker=False, extra_args=None, def_file=None):
         super().__init__()
         self.design = design
         self.platform = platform
         self.use_docker = use_docker
+        self.extra_args = extra_args or {}
+        self.def_file = def_file
         
     def run(self):
         method = "Docker" if self.use_docker else "Local"
         self.log_signal.emit(f"Starting SCAD Generation ({method}) for {self.design} on {self.platform}...")
         try:
-            run_scad_logic(self.design, self.platform, use_docker=self.use_docker)
+            run_scad_logic(self.design, self.platform, use_docker=self.use_docker, extra_args=self.extra_args, def_file=self.def_file)
             self.log_signal.emit("SCAD Generation Complete.")
         except subprocess.CalledProcessError as e:
             self.log_signal.emit("SCAD Generation Failed!")
@@ -50,7 +53,6 @@ class ScadWorker(QThread):
             if self.use_docker:
                  self.log_signal.emit("Hint: Ensure Docker Desktop is running!")
         self.finished_signal.emit()
-
 class SimWorker(QThread):
     log_signal = pyqtSignal(str)
     finished_signal = pyqtSignal()
@@ -86,17 +88,9 @@ class FlowWorker(QThread):
     def run(self):
         self.log_signal.emit(f"Starting flow for assay: {self.assay}")
         try:
-            # Check for error list stored or generate it
-            # Using basic default for new runs
             error_list_stored = [100 for _ in range(self.num_samples)]
             import time
             start_time = time.time()
-            
-            # Run the main flow function
-            # Capture stdout ? Ideally main() would return results or yield logs. 
-            # For now, we will trust main to run and print to console (which we might miss unless we redirect)
-            # But main returns results!
-            
             error_condition = 3 # Default 3%
             
             error_list, opt_time, max_x, chan_vol, reg_vol = flow_main.main(
@@ -147,6 +141,7 @@ class OpenMFDAGUI(QMainWindow):
         self.tabs.addTab(self.design_tab, "2. Design Inputs")
         self.tabs.addTab(self.run_tab, "3. Execution Status")
         self.tabs.addTab(self.sim_export_tab, "4. Sim & Export")
+        self.sync_name_to_tabs(self.assay_name.text())
         
     def setup_printer_tab(self):
         self.printer_tab = QWidget()
@@ -313,8 +308,6 @@ class OpenMFDAGUI(QMainWindow):
                     self.bed_x_input.setValue(int(vals["x"]))
                     self.bed_y_input.setValue(int(vals["y"]))
                     self.bed_z_input.setValue(int(vals["z"]))
-                    # Preset doesn't map to a folder by default, let user define
-                    # self.platform_name_input.setText("") 
                 return
 
         except Exception as e:
@@ -342,8 +335,6 @@ class OpenMFDAGUI(QMainWindow):
                     self.log_message(f"Creating new platform '{platform}'...")
                     self.printer_config.create_new_platform(platform)
                     self.log_message("Platform created.")
-                    # Refresh the combo box list? 
-                    # Ideally yes, but not strictly necessary for the update to proceed
                 else:
                     return
 
@@ -448,12 +439,6 @@ class OpenMFDAGUI(QMainWindow):
             # Update spinbox which triggers update_reagent_inputs
             self.num_samples_spin.setValue(preset["samples"])
             
-            # Now populate specific values
-            # Need to process events or just wait? The signal is synchronous usually.
-            
-            # The update_reagent_inputs clears and recreates widgets.
-            # We need to set their values now.
-            
             reagents = preset["reagents"]
             if len(reagents) == len(self.reagent_inputs):
                 for i, (r_name, r_vol) in enumerate(reagents):
@@ -506,6 +491,37 @@ class OpenMFDAGUI(QMainWindow):
         
         # self.tabs.addTab(self.run_tab, "3. Execution Status")
 
+    def populate_printer_profiles(self):
+        import glob
+        try:
+            # Assuming profile json files are in tools/slicer/profiles/
+            root = os.environ.get("OPENMFDA_ROOT", ".")
+            profiles_dir = os.path.join(root, "tools", "slicer", "profiles")
+            if os.path.exists(profiles_dir):
+                files = glob.glob(os.path.join(profiles_dir, "*.json"))
+                for f in files:
+                    name = os.path.splitext(os.path.basename(f))[0]
+                    self.scad_profile_combo.addItem(name)
+        except Exception as e:
+            print(f"Error loading profiles: {e}")
+
+    def populate_platforms(self, combo):
+        platforms = self.printer_config.get_available_platforms()
+        combo.addItems(platforms)
+
+    def populate_designs(self, combo):
+        root = os.environ.get("OPENMFDA_ROOT", ".")
+        designs_dir = os.path.join(root, "flow", "designs")
+        if os.path.exists(designs_dir):
+            found_designs = set()
+            for platform in os.listdir(designs_dir):
+                p_path = os.path.join(designs_dir, platform)
+                if os.path.isdir(p_path):
+                    for design in os.listdir(p_path):
+                         if os.path.isdir(os.path.join(p_path, design)):
+                             found_designs.add(design)
+            combo.addItems(sorted(list(found_designs)))
+
     def setup_sim_export_tab(self):
         self.sim_export_tab = QWidget()
         layout = QVBoxLayout(self.sim_export_tab)
@@ -515,18 +531,36 @@ class OpenMFDAGUI(QMainWindow):
         scad_layout = QFormLayout()
         scad_group.setLayout(scad_layout)
         
-        self.scad_design_input = QLineEdit()
-        self.scad_platform_input = QLineEdit()
+        self.scad_design_combo = QComboBox()
+        self.populate_designs(self.scad_design_combo)
+        self.scad_design_combo.setEditable(True) # Allow typing specific names too
+
+        self.scad_platform_combo = QComboBox()
+        self.populate_platforms(self.scad_platform_combo)
+        self.scad_platform_combo.setEditable(True)
         self.scad_docker_check = QComboBox()
         self.scad_docker_check.addItems(["Run Locally (Requires opendbpy)", "Run in Docker (Recommended)"])
         self.scad_docker_check.setCurrentIndex(1) # Default to Docker
+        self.scad_stl_check = QGroupBox("Export STL")
+        self.scad_stl_check.setCheckable(True)
+        self.scad_stl_check.setChecked(False)
+        
+        self.scad_profile_combo = QComboBox()
+        self.scad_profile_combo.addItem("None")
+        self.populate_printer_profiles()
+        
+        self.scad_def_input = QLineEdit()
+        self.scad_def_input.setPlaceholderText("Optional: Absolute path to .def file")
         
         btn_scad = QPushButton("Generate 3D Model")
         btn_scad.clicked.connect(self.start_scad_gen)
         
-        scad_layout.addRow("Design Name:", self.scad_design_input)
-        scad_layout.addRow("Platform:", self.scad_platform_input)
+        scad_layout.addRow("Design Name:", self.scad_design_combo)
+        scad_layout.addRow("Platform:", self.scad_platform_combo)
         scad_layout.addRow("Execution Mode:", self.scad_docker_check)
+        scad_layout.addRow("Export STL:", self.scad_stl_check)
+        scad_layout.addRow("Printer Profile:", self.scad_profile_combo)
+        scad_layout.addRow("Input DEF File:", self.scad_def_input)
         scad_layout.addRow("", btn_scad)
         
         layout.addWidget(scad_group)
@@ -554,34 +588,62 @@ class OpenMFDAGUI(QMainWindow):
 
     def sync_name_to_tabs(self, text):
         formatted = text.strip().replace(" ", "_").lower()
-        self.scad_design_input.setText(formatted)
+        self.scad_design_combo.setCurrentText(formatted)
         self.sim_design_input.setText(formatted)
+
+        # Auto-fill verification DEF for myurinalysis demo to help user
+        if formatted == "myurinalysis":
+             # Calculate root based on current file location (tools/gui/app.py -> ../..)
+             root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+             demo_def = os.path.join(root, "tools/route_scripts/testing_files/6_reroute_cp.def")
+             if os.path.exists(demo_def):
+                 print(f"DEBUG: Auto-filling DEF: {demo_def}")
+                 self.scad_def_input.setText(demo_def)
+             else:
+                 print(f"DEBUG: DEF file not found at {demo_def}")
 
     def sync_inputs(self):
         # Helper to pull values from other tabs
         design = self.assay_name.text().strip().replace(" ", "_").lower()
         platform = self.platform_name_input.text().strip()
         
-        if not self.scad_design_input.text():
-            self.scad_design_input.setText(design)
-        if not self.scad_platform_input.text():
-            self.scad_platform_input.setText(platform)
+        if not self.scad_design_combo.currentText():
+            self.scad_design_combo.setCurrentText(design)
+        if not self.scad_platform_combo.currentText():
+            self.scad_platform_combo.setCurrentText(platform)
         if not self.sim_design_input.text():
             self.sim_design_input.setText(design)
 
     def start_scad_gen(self):
         self.sync_inputs()
-        design = self.scad_design_input.text().strip()
-        platform = self.scad_platform_input.text().strip()
+        design = self.scad_design_combo.currentText().strip()
+        platform = self.scad_platform_combo.currentText().strip()
         use_docker = (self.scad_docker_check.currentIndex() == 1)
+        
+        # New options
+        generate_stl = self.scad_stl_check.isChecked()
+        profile_idx = self.scad_profile_combo.currentIndex()
+        profile = None
+        if profile_idx > 0: # 0 is "None"
+             profile = self.scad_profile_combo.currentText()
+             
+        def_file = self.scad_def_input.text().strip()
         
         if not design or not platform:
              QMessageBox.warning(self, "Missing Info", "Design and Platform are required.")
              return
              
         self.tabs.setCurrentIndex(2) # Go to log
-        self.scad_worker = ScadWorker(design, platform, use_docker=use_docker)
+        extras = {}
+        if generate_stl:
+            extras['stl'] = True
+        if profile:
+            extras['profile'] = profile
+        errors = []
+        # Update ScadWorker to accept def_file explicitly
+        self.scad_worker = ScadWorker(design, platform, use_docker=use_docker, extra_args=extras, def_file=def_file)
         self.scad_worker.log_signal.connect(self.log_message)
+        self.scad_worker.start()
         self.scad_worker.start()
 
     def start_sim_run(self):
@@ -617,7 +679,7 @@ class OpenMFDAGUI(QMainWindow):
         
         # Gather inputs
         assay = self.assay_name.text().strip().replace(" ", "_").lower()
-        self.scad_design_input.setText(assay)
+        self.scad_design_combo.setCurrentText(assay)
         self.sim_design_input.setText(assay)
         
         num_samples = self.num_samples_spin.value()
@@ -625,10 +687,7 @@ class OpenMFDAGUI(QMainWindow):
         input_dict = {}
         for name_w, conc_w in self.reagent_inputs:
             name = name_w.text()
-            conc = conc_w.value() * 1e-6 # Convert uL to logic units if needed? 
-            # Looking at main.py: input_dict = {"sample":50*10**(-6), ...}
-            # The tool seems to expect values in what unit? Main.py says "uL" in prompt but multiplies by 10**-6.
-            # Actually, 1 uL = 10^-6 L. So multiplying by 10^-6 makes sense if input is integer microliters.
+            conc = conc_w.value() * 1e-6 # Convert uL to L
             input_dict[name] = conc
             
         platform = self.platform_name_input.text().strip()
@@ -636,10 +695,6 @@ class OpenMFDAGUI(QMainWindow):
             QMessageBox.warning(self, "Missing Platform", "Please enter a valid Platform Folder Name (e.g. 'p.m.8.k' or create a new one).")
             return
 
-        # Check if platform directory checks out roughly (optional but safer)
-        # We allow it to pass if it exists, or maybe we assume user knows what they are doing if they typed it.
-        # But if they used a PRESET, they might not have typed anything.
-        
         self.worker = FlowWorker(assay, num_samples, input_dict, platform)
         self.worker.log_signal.connect(self.log_message)
         self.worker.result_signal.connect(self.log_message)

@@ -30,7 +30,7 @@ def align_data(xyce_df, comsol_df, time_col='TIME'):
     """
     # Simple interpolation to matching time points
     # Assumes 'TIME' column exists in both
-    
+    # TODO: Add support for different time columns
     if time_col not in xyce_df.columns or time_col not in comsol_df.columns:
         print(f"Error: '{time_col}' column missing from one of the files.")
         return None, None
@@ -50,6 +50,7 @@ def align_data(xyce_df, comsol_df, time_col='TIME'):
         # Try to match column names or just interpolate all
         # If COMSOL columns don't match Xyce columns perfectly, the user needs to provide a mapping
         # For now, we just interpolate everything in COMSOL df
+        # TODO: Add support for different column names
         try:
              aligned_comsol[col] = np.interp(target_times, comsol_df[time_col], comsol_df[col])
         except Exception as e:
@@ -66,6 +67,7 @@ def calculate_error(xyce_df, comsol_df, mapping=None):
     
     if mapping is None:
         # Try to auto-match columns that exist in both
+        # TODO: Add support for different column names
         common_cols = set(xyce_df.columns) & set(comsol_df.columns)
         mapping = {c: c for c in common_cols if c != 'TIME'}
         
