@@ -30,3 +30,8 @@
 ## 4. Next Steps
 *   [ ] Expand printer profile library for more commercial resin printers.
 *   [ ] Further optimize auto-routing algorithms for complex high-density chips.
+
+## 5. Credits
+This work is based on the **OpenMFDA** flow developed at the **University of Utah**.
+*   **Original Repository:** [utah-MFDA/openmfda_flow](https://github.com/utah-MFDA/openmfda_flow)
+*   **Citation:** Please credit the original authors when using or deriving from this toolchain.
