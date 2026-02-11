@@ -30,4 +30,8 @@ if { [llength $clks] == 0 } {
   }
 }
 
-utl::info "FLW" 11 "Path endpoint count [sta::endpoint_count]"
+if { [catch {set ep_count [sta::endpoint_count]} err] } {
+  utl::warn "FLW" 11 "sta::endpoint_count not available: $err"
+} else {
+  utl::info "FLW" 11 "Path endpoint count $ep_count"
+}
