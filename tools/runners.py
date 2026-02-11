@@ -231,7 +231,11 @@ def run_scad_logic(design, platform, def_file=None, results_dir=None, extra_args
     if os.path.exists(out_dir):
         scad_files = [f for f in os.listdir(out_dir) if f.endswith('.scad')]
         if scad_files:
-            latest_file = os.path.join(out_dir, scad_files[0]) # Just pick one
+            target_file = f"{design}.scad"
+            if target_file in scad_files:
+                 latest_file = os.path.join(out_dir, target_file)
+            else:
+                 latest_file = os.path.join(out_dir, scad_files[0]) # Fallback
             print(f"Opening generated file: {latest_file}")
             
             # Prefer local OpenSCAD

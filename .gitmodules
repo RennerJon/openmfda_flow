@@ -16,3 +16,15 @@
 [submodule "flow/platforms/p.m.8.k/pdk"]
 	path = flow/platforms/p.m.8.k/pdk
 	url = https://github.com/utah-MFDA/phrozen8k_pdk.git
+[submodule "flow/platforms/standard/pdk"]
+	path = flow/platforms/standard/pdk
+	url = https://github.com/utah-MFDA/h.r.3.3_pdk.git
+[submodule "flow/platforms/standardphrozen/pdk"]
+	path = flow/platforms/standardphrozen/pdk
+	url = https://github.com/utah-MFDA/h.r.3.3_pdk.git
+[submodule "flow/platforms/test/pdk"]
+	path = flow/platforms/test/pdk
+	url = https://github.com/utah-MFDA/h.r.3.3_pdk.git
+[submodule "flow/platforms/test1/pdk"]
+	path = flow/platforms/test1/pdk
+	url = https://github.com/utah-MFDA/h.r.3.3_pdk.git

@@ -545,10 +545,6 @@ class OpenMFDAGUI(QMainWindow):
         self.scad_stl_check.setCheckable(True)
         self.scad_stl_check.setChecked(False)
         
-        self.scad_profile_combo = QComboBox()
-        self.scad_profile_combo.addItem("None")
-        self.populate_printer_profiles()
-        
         self.scad_def_input = QLineEdit()
         self.scad_def_input.setPlaceholderText("Optional: Absolute path to .def file")
         
@@ -559,7 +555,6 @@ class OpenMFDAGUI(QMainWindow):
         scad_layout.addRow("Platform:", self.scad_platform_combo)
         scad_layout.addRow("Execution Mode:", self.scad_docker_check)
         scad_layout.addRow("Export STL:", self.scad_stl_check)
-        scad_layout.addRow("Printer Profile:", self.scad_profile_combo)
         scad_layout.addRow("Input DEF File:", self.scad_def_input)
         scad_layout.addRow("", btn_scad)
         
@@ -620,13 +615,7 @@ class OpenMFDAGUI(QMainWindow):
         platform = self.scad_platform_combo.currentText().strip()
         use_docker = (self.scad_docker_check.currentIndex() == 1)
         
-        # New options
         generate_stl = self.scad_stl_check.isChecked()
-        profile_idx = self.scad_profile_combo.currentIndex()
-        profile = None
-        if profile_idx > 0: # 0 is "None"
-             profile = self.scad_profile_combo.currentText()
-             
         def_file = self.scad_def_input.text().strip()
         
         if not design or not platform:
@@ -637,13 +626,9 @@ class OpenMFDAGUI(QMainWindow):
         extras = {}
         if generate_stl:
             extras['stl'] = True
-        if profile:
-            extras['profile'] = profile
-        errors = []
-        # Update ScadWorker to accept def_file explicitly
+
         self.scad_worker = ScadWorker(design, platform, use_docker=use_docker, extra_args=extras, def_file=def_file)
         self.scad_worker.log_signal.connect(self.log_message)
-        self.scad_worker.start()
         self.scad_worker.start()
 
     def start_sim_run(self):

@@ -1,5 +1,9 @@
 # OpenMFDA Flow: Project Status Update
 **Date:** January 13, 2026
+## 1. Introduction
+*   **Project:** OpenMFDA (Open Microfluidic Design Automation)
+*   **Goal:** To provide a free and open-source platform for microfluidic design automation.
+*   **Target Users:** Researchers, engineers, and hobbyists working on microfluidic devices.
 
 ## 2. Key Accomplishments
 ### Reliable 3D Manufacturing

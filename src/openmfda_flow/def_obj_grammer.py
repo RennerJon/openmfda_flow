@@ -4,7 +4,7 @@ from lark import Lark
 def import_def_parser():
                       
 #def_parser = 
-    return Lark("""
+    return Lark(r"""
 
     start : def_f+
 
