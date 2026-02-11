@@ -251,19 +251,15 @@ class route:
 
     def segment_iter(self, wire):
         last = None
-        dimm_x, _, _ = self.params.net_dimm(wire.getNet())
-        # TODO This is not in the same units as the def file
-        dimm_x = self.params.def_scale_ * dimm_x
         for (opcode, layer, vals) in self.wire_iter(wire):
             if opcode == odb.dbWireDecoder.PATH or opcode == odb.dbWireDecoder.VWIRE or opcode == odb.dbWireDecoder.SHORT:
                 last = None
             elif opcode == odb.dbWireDecoder.POINT or opcode == odb.dbWireDecoder.POINT_EXT:
                 (point, prop) = vals
                 if len(point) == 2:
-                    # By default, no extension means half the width.
-                    # using 0.6 to ensure overlap
-                    ext = dimm_x * 0.6
-                    point = (point[0], point[1], ext)
+                    # No extension — use raw DEF coordinates so routes
+                    # align exactly with via endpoints.
+                    point = (point[0], point[1], 0)
                 if last is not None:
                     yield (layer, last, point)
                 last = point
@@ -301,7 +297,7 @@ class route:
 
     def add_channel(self, layer, net, start, end):
         dimm = self.generate_dimm(*self.params.scale_dimension(self.params.net_dimm(net)))
-        ax, ay, aext = self.params.scale_point(start)
+        ax, ay, _ = self.params.scale_point(start)
         if type(end) == odb.dbTechVia or type(end) == odb.dbVia:
             height = self.params.layer_height(end.getBottomLayer())
             via_height = self.params.layer_height(end.getTopLayer())
@@ -310,14 +306,14 @@ class route:
             connect_matrix = [["z", p1, 2]]
         else:
             height = self.params.layer_height(layer)
-            bx, by, bext = self.params.scale_point(end)
+            bx, by, _ = self.params.scale_point(end)
             if ax == bx:
-                p0 = [ax, ay - aext, height]
-                p1 = [bx, by + bext, height]
+                p0 = [ax, ay, height]
+                p1 = [bx, by, height]
                 connect_matrix = [["y", p1, 1]]
             else:
-                p0 = [ax - aext, ay, height]
-                p1 = [bx + bext, by, height]
+                p0 = [ax, ay, height]
+                p1 = [bx, by, height]
                 connect_matrix = [["x", p1, 0]]
         return scad_routing.routing(p0, connect_matrix, dimm)
 
@@ -346,7 +342,7 @@ class route:
         df.to_csv(os.path.join(output_dir, design + "_lengths.csv"))
 
     def generate_channels(self):
-        block = db.getChip().getBlock()
+        block = self.db.getChip().getBlock()
         nets = block.getNets()
         for net in nets:
             wire = net.getWire()
@@ -495,7 +491,7 @@ class scad_generation:
                     f1.write(line)
         return out_file
 
-    def generate_std_cell_scad(self, px, layer, lpv, design, component_file, output_dir):
+    def generate_std_cell_scad(self, px, layer, lpv, design, component_file, output_dir, scad_include_files=None):
 
         """Generates the standard cell scad with the pixel and layers defined."""
         os.makedirs(output_dir, exist_ok=True)
@@ -505,6 +501,12 @@ class scad_generation:
         comp_dir = os.path.dirname(component_file)
         with open(component_file) as f:
             content = f.read()
+        
+        # Check if px, layer, lpv are already defined in the component file
+        # to avoid duplicate variable definitions
+        has_px = any(line.strip().startswith('px =') or line.strip().startswith('px=') for line in content.splitlines())
+        has_layer = any(line.strip().startswith('layer =') or line.strip().startswith('layer=') for line in content.splitlines())
+        has_lpv = any(line.strip().startswith('lpv =') or line.strip().startswith('lpv=') for line in content.splitlines())
         
         for line in content.splitlines():
             line = line.strip()
@@ -522,13 +524,32 @@ class scad_generation:
                         except Exception as e:
                             print(f"Warning: Failed to copy dependency {ref_file}: {e}")
 
+        # Copy scad_include files to output directory
+        if scad_include_files:
+            for include_file in scad_include_files:
+                if os.path.exists(include_file):
+                    dst_path = os.path.join(output_dir, os.path.basename(include_file))
+                    if not os.path.exists(dst_path):
+                        try:
+                            shutil.copy2(include_file, dst_path)
+                            print(f"DEBUG: Copied include file {os.path.basename(include_file)} to results.")
+                        except Exception as e:
+                            print(f"Warning: Failed to copy include file {include_file}: {e}")
+
         with open(out_file, "w") as f1:
             f1.write(f"use <{design}_routing.scad>\n")
-            f1.write(f"px = {px};\nlayer = {layer};\nlpv = {lpv};\n\n")
+            # Only write px/layer/lpv if not already defined in content
+            if not has_px:
+                f1.write(f"px = {px};\n")
+            if not has_layer:
+                f1.write(f"layer = {layer};\n")
+            if not has_lpv:
+                f1.write(f"lpv = {lpv};\n")
+            f1.write("\n")
             f1.write(content)
         return out_file
 
-def scad_pnr(db, component_file, routing_file, platform, design, def_file, results_dir, px, layer, bottom_layer, lpv, xbulk, ybulk, zbulk, xchip, ychip, pitch, res, dimm_file = None):
+def scad_pnr(db, component_file, routing_file, platform, design, def_file, results_dir, px, layer, bottom_layer, lpv, xbulk, ybulk, zbulk, xchip, ychip, pitch, res, dimm_file = None, scad_include_files = None):
     """This function generates the entire SCAD flow by calling the classes above in their intended order."""
 
     print("------------------------------")
@@ -537,7 +558,7 @@ def scad_pnr(db, component_file, routing_file, platform, design, def_file, resul
 
     print("Generating standard cell and routing SCAD...")
     scad_routing_file = scad_generation().generate_routing_scad(design, routing_file, results_dir)
-    scad_std_file = scad_generation().generate_std_cell_scad(px, layer, lpv, design, component_file, results_dir)
+    scad_std_file = scad_generation().generate_std_cell_scad(px, layer, lpv, design, component_file, results_dir, scad_include_files)
     print("SCAD generation complete\n")
 
     print(f"Importing generated SCAD for design '{design}'")
@@ -702,6 +723,8 @@ if __name__ == "__main__":
                     help="Optional .csv file with routing dimensions.", default = None)
     ap.add_argument('--pcell_file', metavar='<path>', dest='pcell_file', type=str,
                     help="Optional .csv file with pcell parameters.", default = None)
+    ap.add_argument('--scad_include', metavar='<path>', dest='scad_include', type=str, nargs='*',
+                    help="Optional SCAD files to include (e.g., lef_scad_config.scad).", default = None)
     args = ap.parse_args()
 
     db = odb.dbDatabase.create()
@@ -753,4 +776,5 @@ if __name__ == "__main__":
              args.ychip,
              args.pitch,
              args.res,
-             args.dimm_file)
+             args.dimm_file,
+             args.scad_include)
