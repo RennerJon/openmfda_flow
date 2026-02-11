@@ -7,17 +7,21 @@ OpenMFDA is a hardware-description-language (HDL) based toolchain for the automa
 This project is fully containerized. To ensure compatibility across Windows, macOS, and Linux, we use **Docker** and **VS Code Dev Containers**.
 
 ### Prerequisites
+
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 * [VS Code](https://code.visualstudio.com/) with the **Dev Containers** extension.
 
 ### Installation
+
 1. **Clone the repo:**
+
    ```bash
    git clone https://github.com/rennerjones/openmfda_flow.git
    cd openmfda_flow
    ```
 
 2. **Open in VS Code:**
+
    ```bash
    code .
    ```
@@ -30,18 +34,20 @@ This project is fully containerized. To ensure compatibility across Windows, mac
 * `/src`: Core Python logic for routing and placement.
 * `/sim`: Xyce simulation netlists and verification scripts.
 * `/cad`: 3D geometry generation modules (STL/GDS).
-* `/tests`: Unit tests for fluidic logic gates.
+* `/tests`: Unit and integration tests for CLI, flow components, and netlist parsing.
 
 ## 🧪 Development Workflow
 
 Before pushing code, run the local cleanup and test suite:
 
 1. **Clean Workspace:**
+
    ```bash
    python3 scripts/clean_mfda.py
    ```
 
 2. **Run Simulations:**
+
    ```bash
    python3 main.py --simulate
    ```

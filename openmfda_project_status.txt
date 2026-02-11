@@ -32,6 +32,12 @@ SECTION 1: RECENT ACHIEVEMENTS & FIXES
 6.  **Component Library Updates:**
     *   Updated `diffmix` and `junction` geometries (Z-height, mirroring logic) for improved routing reliability and 3D visualization.
 
+7.  **Routing Connectivity:**
+    *   Resolved **0.064mm routing gap** in `scad_pnr.py` by removing incorrect extension offsets.
+    *   Fixed P-cell pin geometry in `p_serpentine_*.lef` to be on-grid (20x20) and passing DRC.
+    *   Unblocked PNR flow by fixing broken symlinks and outdated TCL flags.
+    *   **Verified:** Full flow generates gap-free SCAD models.
+
 [CURRENT STATUS]
 - **End-to-End Flow:** Verified functional for `myurinalysis` on `h.r.3.3` platform.
 - **Docker Integration:** Fully operational; `main.py` correctly orchestrates Docker containers for PNR and SCAD gen.
