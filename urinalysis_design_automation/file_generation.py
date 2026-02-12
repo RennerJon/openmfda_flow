@@ -165,12 +165,12 @@ def io_file(assay, platform, num_samples, soln_dict):
     f1 = 1050
     f2 = 660
     for i in range(num_samples):
-        pin_str += f"place_pin -pin_name soln{i+1} -layer met9 -location" + " { " + str(f1) + " " + str(f2) +" } -pin_size {1 1}" + f"\n"
+        pin_str += f"place_pin -pin_name soln{i+1} -layer met3 -location" + " { " + str(f1) + " " + str(f2) +" } -pin_size {20 20}" + f"\n"
         f1 += 90
         if f1 >= 1590:
             f1 = 960
             f2 = 750
-    pin_str += "place_pin -pin_name out -layer met9 -location { 1590 750 } -pin_size {1 1}"
+    pin_str += "place_pin -pin_name out -layer met3 -location { 1590 750 } -pin_size {20 20}"
     directory = f'flow/designs/{platform}/{assay}'
     filename = 'io_constraints.tcl'
     filepath = os.path.join(directory, filename)

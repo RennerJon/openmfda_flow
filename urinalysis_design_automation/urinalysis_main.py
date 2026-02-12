@@ -112,16 +112,16 @@ def main(assay, platform, num_samples, input_dict, error_condition, start_time, 
     if result.returncode != 0:
         print("Flow execution failed. Aborting optimization.")
         # Return dummy values or raise error to stop processing
-        return [], 0, 0, [], []
+        return [], 0, 0, [], [], 0
 
     print(con_results(assay)[0])
     # Optimize design
     ratio_dict, length_dict = conc_ratio(input_dict, num_samples)
     len_list, layer_list, pitch_list, turn_list, chan_vol, reg_vol = init_mix(num_samples, length_dict)
-    error_list, opt_time, max_x = min_error(0, len_list, layer_list, pitch_list, turn_list, error_condition, assay, num_samples, 0, platform, length_dict, 100, start_time, error_list_stored, 0)
+    error_list, opt_time, max_x, sim_time = min_error(0, len_list, layer_list, pitch_list, turn_list, error_condition, assay, num_samples, 0, platform, length_dict, 100, start_time, error_list_stored, 0)
     # Append verilog file
     # subprocess.run(f"cat flow/designs/src/{assay}/{assay}.v", shell=True)
-    return error_list, opt_time, max_x, chan_vol, reg_vol
+    return error_list, opt_time, max_x, chan_vol, reg_vol, sim_time
 
 
 # Function for replacing serpentine information in specified file(s)

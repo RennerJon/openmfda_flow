@@ -38,6 +38,15 @@ SECTION 1: RECENT ACHIEVEMENTS & FIXES
     *   Unblocked PNR flow by fixing broken symlinks and outdated TCL flags.
     *   **Verified:** Full flow generates gap-free SCAD models.
 
+8.  **Project Cleanup:**
+    *   Consolidated entry points: `main.py` is the single source of truth.
+    *   Removed stale scripts (`openmfda_flow_script.py`, `run_mfda_docker.py`, etc.).
+    *   Created `tests/` directory with comprehensive test suite.
+
+9.  **Features:**
+    *   Implemented **Assay Time Estimation**: GUI now displays physical assay duration extracted from `simulation.config`.
+    *   Renamed "Optimal Time" to "Optimization Runtime" for clarity.
+
 [CURRENT STATUS]
 - **End-to-End Flow:** Verified functional for `myurinalysis` on `h.r.3.3` platform.
 - **Docker Integration:** Fully operational; `main.py` correctly orchestrates Docker containers for PNR and SCAD gen.

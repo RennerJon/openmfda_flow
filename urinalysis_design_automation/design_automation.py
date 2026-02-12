@@ -208,6 +208,35 @@ def con_results(assay):
     table_str += "-" * 65
     return table_str, error_list, expect_conc, eval_conc 
 
+# Function to extract simulation duration from config
+def get_simulation_duration(assay):
+    try:
+        # Check standard result location first
+        config_path = f"flow/results/{assay}/base/simulation/simulation.config"
+        if not os.path.exists(config_path):
+             # Fallback to source design (platform independent check might be tricky, try standard locations)
+             # Try h.r.3.3 as default for parsing if result missing
+             config_path = f"flow/designs/h.r.3.3/{assay}/simulation.config"
+        
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                for line in f:
+                    if line.strip().startswith("transient"):
+                        # format: transient stop step [start]
+                        parts = line.strip().split()
+                        if len(parts) >= 2:
+                            time_str = parts[1]
+                            # Simple parsing logic compatible with SimulationXyce
+                            val = 0.0
+                            if time_str.endswith('m'): val = float(time_str[:-1]) * 1e-3
+                            elif time_str.endswith('u'): val = float(time_str[:-1]) * 1e-6
+                            elif time_str.endswith('s'): val = float(time_str[:-1])
+                            else: val = float(time_str)
+                            return val
+    except Exception as e:
+        print(f"Warning: Could not parse simulation time: {e}")
+    return 0.0
+
 # Function for replacing serpentine information in specified file(s)
 def edit_file(filename, num_samples, serp_num, old_serp, new_serp, max_x, zero):
     # Read and modify each line of a file
@@ -339,7 +368,8 @@ def update_flow(assay, num_samples, old_serp, new_serp, serp_num, max_x, zero):
     max_x = edit_file(verilog_file, num_samples, serp_num, old_serp, new_serp, max_x, zero)
    
     # Run Tcl script commands following .def and .v modification 
-    command = f"cd flow && make -e DESIGN={assay} run_tcl_script -B"
+    python_cmd = sys.executable
+    command = f"cd flow && make -e DESIGN={assay} PYTHON_CMD={python_cmd} run_tcl_script -B"
     result = subprocess.run(command, shell=True)
 
     # Print results
@@ -486,7 +516,8 @@ def min_error(i, len_list, layer_list, pitch_list, turn_list, error_condition, a
         if j == len(error_list) - 1:
             if error_list[j] * 100  <= error_condition: 
             # or error_calc(old_error, error_list[j]) * 100 <= error_diff_condition:
-                return error_list, opt_time, max_x
+                sim_time = get_simulation_duration(assay)
+                return error_list, opt_time, max_x, sim_time
         else:
             if error_list[j] * 100 <= error_condition: 
             # or error_calc(old_error, error_list[j]) * 100 <= error_diff_condition:
@@ -515,14 +546,16 @@ def min_error(i, len_list, layer_list, pitch_list, turn_list, error_condition, a
         # command = f"cp flow/results/{assay}/base/2_2_place_iop.def"
 
         # Run Tcl script commands following .def and .v modification 
-        command = f"cd flow && make -e DESIGN={assay} run_tcl_script"
+        python_cmd = sys.executable
+        command = f"cd flow && make -e DESIGN={assay} PYTHON_CMD={python_cmd} run_tcl_script"
         result = subprocess.run(command, shell=True)
 
         # Print results
         table_str, error_list, expect_conc, eval_conc = con_results(assay)
         print(f"AFTER {cutoff_time/60} MINUTES")
         print(table_str)
-        return error_list, opt_time, max_x
+        sim_time = get_simulation_duration(assay)
+        return error_list, opt_time, max_x, sim_time
     # Perform Newton Rapshon method on current component/soln, return a and b for bisection method 
     eval_list = []
     count = 0
@@ -540,5 +573,5 @@ def min_error(i, len_list, layer_list, pitch_list, turn_list, error_condition, a
     else:
         i = 0
         recurv_count = 0
-    error_list, opt_time, max_x = min_error(i, len_list, layer_list, pitch_list, turn_list, error_condition, assay, num_samples, recurv_count, platform, length_dict, error_list[i], start_time, error_list_stored, max_x)
-    return error_list, opt_time, max_x
+    error_list, opt_time, max_x, sim_time = min_error(i, len_list, layer_list, pitch_list, turn_list, error_condition, assay, num_samples, recurv_count, platform, length_dict, error_list[i], start_time, error_list_stored, max_x)
+    return error_list, opt_time, max_x, sim_time

@@ -93,13 +93,14 @@ class FlowWorker(QThread):
             start_time = time.time()
             error_condition = 3 # Default 3%
             
-            error_list, opt_time, max_x, chan_vol, reg_vol = flow_main.main(
+            error_list, opt_time, max_x, chan_vol, reg_vol, sim_time = flow_main.main(
                 self.assay, self.platform, self.num_samples, self.input_dict, 
                 error_condition, start_time, error_list_stored
             )
             
             result_str = "Flow Complete!\n\n"
-            result_str += f"Optimal Time: {opt_time:.2f}s\n"
+            result_str += f"Optimization Runtime: {opt_time:.2f}s\n"
+            result_str += f"Assay Duration: {sim_time}s\n"
             result_str += f"Max X: {max_x}\n\nResults:\n"
             
             for i, (name, conc) in enumerate(self.input_dict.items()):

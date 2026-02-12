@@ -63,7 +63,7 @@ This repository uses **GitHub Actions** to automatically verify:
 
 ## 🎓 Academic Context
 
-Developed at the **University of Utah** and **Brigham Young University**. OpenMFDA is part of ongoing research into Microfluidic Design Automation (MFDA) for 3D-printed medical devices and bio-engineering applications.
+Developed at the **University of Utah**. OpenMFDA is part of ongoing research into Microfluidic Design Automation (MFDA) for 3D-printed medical devices and bio-engineering applications.
 
 ---
 
