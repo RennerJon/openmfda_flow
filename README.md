@@ -11,12 +11,14 @@ This project is fully containerized. To ensure compatibility across Windows, mac
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 * [VS Code](https://code.visualstudio.com/) with the **Dev Containers** extension.
 
+**Maintained by:** Utah MFDA Group
+
 ### Installation
 
 1. **Clone the repo:**
 
    ```bash
-   git clone https://github.com/rennerjones/openmfda_flow.git
+   git clone https://github.com/utah-mfda/openmfda_flow.git
    cd openmfda_flow
    ```
 
@@ -61,9 +63,8 @@ This repository uses **GitHub Actions** to automatically verify:
 
 ## 🎓 Academic Context
 
-Developed at the **University of Utah**. OpenMFDA is part of ongoing research into Microfluidic Design Automation (MFDA) for 3D-printed medical devices and bio-engineering applications.
+Developed at the **University of Utah** and **Brigham Young University**. OpenMFDA is part of ongoing research into Microfluidic Design Automation (MFDA) for 3D-printed medical devices and bio-engineering applications.
 
 ---
 
-**Maintained by:** Renner Jones
 **License:** MIT
