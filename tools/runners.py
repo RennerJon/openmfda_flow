@@ -2,13 +2,11 @@ import sys
 import os
 import subprocess
 import shutil
+#This file is used to run the SCAD PNR script and the simulation script for the purpose of testing the tools 
 
 def get_openmfda_root():
     if "OPENMFDA_ROOT" in os.environ:
         return os.environ["OPENMFDA_ROOT"]
-    # Fallback: assume this file is in tools/
-    # This file: tools/runners.py
-    # Root: ../
     current = os.path.dirname(os.path.abspath(__file__))
     return os.path.dirname(current)
 
@@ -25,8 +23,6 @@ def run_scad_logic(design, platform, def_file=None, results_dir=None, extra_args
         raise ValueError("Design and Platform are required for SCAD generation.")
 
     if use_docker:
-        # Construct docker command
-        # docker run --rm -v "root:/home/jovyan/openmfda_flow" openmfda-flow python3 tools/scad_render/scad_pnr.py ...
         cmd = ["docker", "run", "--rm", 
                "-v", f"{root}:/home/jovyan/openmfda_flow",
                "openmfda-flow",
@@ -48,41 +44,36 @@ def run_scad_logic(design, platform, def_file=None, results_dir=None, extra_args
     lef_paths = []
     
     if os.path.exists(platform_dir):
-        # Scan for TLEF
+        # Scan for TLEF in the platform directory
         for root_d, dirs, files in os.walk(platform_dir):
             for f in files:
                 if f.endswith(".tlef"):
                     if "tech" in f or "merged" not in f: 
-                         # Prefer explicit platform match if multiple?
-                         # Just pick the first found for now
                          if not tlef_path: tlef_path = os.path.join(root_d, f)
                 if f.endswith(".lef"):
-                     # We usually want the merged lef or individual cells
-                     # For SCAD generation, we need the cells (macros)
                      if "merged" in f or "p_cell" in f:
-                         # Skip known bad template files (they usually start with p_cell_)
                          if f.startswith("p_cell_"): continue
                          lef_paths.append(os.path.join(root_d, f))
     
     if def_file and os.path.exists(def_file):
         def_dir = os.path.dirname(args.def_file) if 'args' in locals() else os.path.dirname(def_file)
-        # Check def_dir/lef or def_dir/../lef 
+        # Checking the following folders for LEF files: def_dir/lef or def_dir/../lef 
         cands = [os.path.join(def_dir, "lef"), os.path.join(os.path.dirname(def_dir), "lef")]
         for d in cands:
              if os.path.exists(d):
                  for root_d, dirs, files in os.walk(d):
                      for f in files:
                          if f.endswith(".lef"):
-                            if f.startswith("p_cell_"): continue # Skip templates here too
+                            if f.startswith("p_cell_"): continue
                             print(f"DEBUG: Found adjacent LEF: {f}")
                             lef_paths.append(os.path.join(root_d, f))
     
     routing_file = os.path.join(platform_dir, "scad", "routing.scad")
-    if not os.path.exists(routing_file): # Fallback
+    if not os.path.exists(routing_file): # Fallback to pdk directory
         routing_file = os.path.join(platform_dir, "pdk", "py_scripts", "routing.scad")
         
     component_file = os.path.join(platform_dir, "scad", "components.scad")
-    if not os.path.exists(component_file):
+    if not os.path.exists(component_file): # Fallback to pdk directory
         component_file = os.path.join(platform_dir, "pdk", "py_scripts", "components.scad")
     
     def adjust_path_for_docker(path):
@@ -95,13 +86,10 @@ def run_scad_logic(design, platform, def_file=None, results_dir=None, extra_args
     if def_file:
          cmd.extend(["--def_file", adjust_path_for_docker(def_file)])
     else:
-        # Try to guess
         guess = os.path.join(flow_root, "results", design, "base", "2_place.def")
         if os.path.exists(guess):
-             # For docker, we pass the Adjusted Guess
              cmd.extend(["--def_file", adjust_path_for_docker(guess)])
         if os.path.exists(guess):
-             # For docker, we pass the Adjusted Guess
              cmd.extend(["--def_file", adjust_path_for_docker(guess)])
         else:
              print(f"Warning: DEF file not found at {guess}, and not provided.")
@@ -231,7 +219,7 @@ def run_scad_logic(design, platform, def_file=None, results_dir=None, extra_args
     if os.path.exists(out_dir):
         scad_files = [f for f in os.listdir(out_dir) if f.endswith('.scad')]
         if scad_files:
-            latest_file = os.path.join(out_dir, scad_files[0]) # Just pick one
+            latest_file = os.path.join(out_dir, scad_files[0]) # Pick the first file
             print(f"Opening generated file: {latest_file}")
             
             # Prefer local OpenSCAD
@@ -296,7 +284,6 @@ def run_sim_logic(design, sim_config=None, verilog_file=None, library_file=None,
     try:
         from runMFDASim import runSimulation
     except ImportError:
-        # Just in case you are running from a place where runMFDASim isn't in path this is here for debugging
         print(f"Error: Could not import runMFDASim from {sim_tools_path}")
         raise
 

@@ -124,7 +124,7 @@ ROUTE_MAP_OUT_REROUTE = $(RESULTS_DIR)/7_$(DESIGN)_route_nets.json
 
 $(RESULTS_DIR)/$(DESIGN)_reroute.scad: $(RESULTS_DIR)/$(SCAD_DEF) $(LIBRARY_DEPS)
 	mkdir -p "$(RESULTS_DIR)"
-	$(TIME_CMD) python3 $(SCAD_SCRIPT) $(SCAD_ARGS) \\
+	$(TIME_CMD) $(PYTHON_CMD) $(SCAD_SCRIPT) $(SCAD_ARGS) \\
 		--def_file $< \\
         --design $(DESIGN) \\
 		--length_out $(LENGTH_FILE_REROUTE) \\
@@ -134,7 +134,7 @@ $(RESULTS_DIR)/$(DESIGN)_reroute.scad: $(RESULTS_DIR)/$(SCAD_DEF) $(LIBRARY_DEPS
 
 $(RESULTS_DIR)/xyceOut_1.csv: $(RESULTS_DIR)/$(DESIGN)_reroute.scad $(SIMULATION_CONFIG) $(RESULTS_DIR)/xyce_run.config
 	mkdir -p $(RESULTS_DIR)/simulation
-	$(TIME_CMD) python3 $(SIMULATION_SCRIPT) \\
+	$(TIME_CMD) $(PYTHON_CMD) $(SIMULATION_SCRIPT) \\
 		$(SIMULATION_ARGS) \\
 		--output_dir $(RESULTS_DIR) \\
 		--netlist $(VERILOG_FILES) \\
@@ -165,12 +165,12 @@ def io_file(assay, platform, num_samples, soln_dict):
     f1 = 1050
     f2 = 660
     for i in range(num_samples):
-        pin_str += f"place_pin -pin_name soln{i+1} -layer met9 -location" + " { " + str(f1) + " " + str(f2) +" } -pin_size {1 1}" + f"\n"
+        pin_str += f"place_pin -pin_name soln{i+1} -layer met9 -location" + " { " + str(f1) + " " + str(f2) +" } -pin_size {14 14}" + f"\n"
         f1 += 90
         if f1 >= 1590:
             f1 = 960
             f2 = 750
-    pin_str += "place_pin -pin_name out -layer met9 -location { 1590 750 } -pin_size {1 1}"
+    pin_str += "place_pin -pin_name out -layer met9 -location { 1590 750 } -pin_size {14 14}"
     directory = f'flow/designs/{platform}/{assay}'
     filename = 'io_constraints.tcl'
     filepath = os.path.join(directory, filename)

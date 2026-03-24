@@ -5,3 +5,4 @@ pandas
 solidpython
 PyYAML
 lark
+regex

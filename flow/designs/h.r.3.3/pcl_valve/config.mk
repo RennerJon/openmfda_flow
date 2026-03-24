@@ -25,7 +25,7 @@ include $(FLOW_HOME)/../tools/p_cell_generator/util.mk
 .FORCE:
 mk_pcell:
 	#mkdir -p $(RESULTS_DIR)
-	python3 $(P_CELL_SCRIPT) \
+	$(PYTHON_CMD) $(P_CELL_SCRIPT) \
 			--netlist $(VERILOG_FILES) \
 			--orig_lef $(ORIG_LEF) \
 			--out_lef $(PCELL_MERGE_LEF) \

@@ -28,8 +28,7 @@ def align_data(xyce_df, comsol_df, time_col='TIME'):
     Aligns Xyce and COMSOL data based on time column.
     Interpolates COMSOL data to match Xyce time steps if necessary.
     """
-    # Simple interpolation to matching time points
-    # Assumes 'TIME' column exists in both
+
     # TODO: Add support for different time columns
     if time_col not in xyce_df.columns or time_col not in comsol_df.columns:
         print(f"Error: '{time_col}' column missing from one of the files.")
@@ -47,9 +46,6 @@ def align_data(xyce_df, comsol_df, time_col='TIME'):
     
     for col in comsol_df.columns:
         if col == time_col: continue
-        # Try to match column names or just interpolate all
-        # If COMSOL columns don't match Xyce columns perfectly, the user needs to provide a mapping
-        # For now, we just interpolate everything in COMSOL df
         # TODO: Add support for different column names
         try:
              aligned_comsol[col] = np.interp(target_times, comsol_df[time_col], comsol_df[col])
@@ -66,7 +62,6 @@ def calculate_error(xyce_df, comsol_df, mapping=None):
     report = []
     
     if mapping is None:
-        # Try to auto-match columns that exist in both
         # TODO: Add support for different column names
         common_cols = set(xyce_df.columns) & set(comsol_df.columns)
         mapping = {c: c for c in common_cols if c != 'TIME'}
@@ -83,7 +78,6 @@ def calculate_error(xyce_df, comsol_df, mapping=None):
         c_val = comsol_df[c_col].values
         
         abs_err = np.abs(x_val - c_val)
-        # Avoid division by zero
         rel_err = np.abs((x_val - c_val) / (np.where(c_val==0, 1e-9, c_val))) * 100
         
         stats = {

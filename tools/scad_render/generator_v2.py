@@ -1193,12 +1193,9 @@ show_lefs=false ;
     if transparent:
         tp = '%'
     else:
-        tp = ''
+        tp = '%' # Force transparent to prevent STL export of the interconnect block
     with open(o_file, 'a') as of:
         of.write(f"""
-if($preview) {fb}
-    {tp}%interconnect_32channel({xbulk/2}, {ybulk/2}, {zbulk});
-{bb} else {fb}
     {tp}interconnect_32channel({xbulk/2}, {ybulk/2}, {zbulk});
 {bb}
 """)

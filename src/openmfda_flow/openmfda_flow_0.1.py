@@ -143,7 +143,7 @@ def write_pin_constraints(io_filename, pin_names, layer):
             for i, y in enumerate([930, 840, 750, 660]):
                 if pin_names[i][j]:
                     print(
-                        f"place_pin -pin_name {pin_names[i][j]} -layer {layer[i][j]} -location {{ {x} {y} }} -pin_size {{1 1}}",
+                        f"place_pin -pin_name {pin_names[i][j]} -layer {layer[i][j]} -location {{ {x} {y} }} -pin_size {{14 14}}",
                         file=f,
                     )
 

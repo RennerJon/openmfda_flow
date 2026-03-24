@@ -26,9 +26,9 @@ ENV PATH=$PATH:/OpenROAD-flow-scripts/tools/install/OpenROAD/bin
 # Previous Dockerfile created 'jovyan'.
 ARG NB_USER=jovyan
 ARG NB_UID=1000
-ENV USER ${NB_USER}
-ENV NB_UID ${NB_UID}
-ENV HOME /home/${NB_USER}
+ENV USER=${NB_USER}
+ENV NB_UID=${NB_UID}
+ENV HOME=/home/${NB_USER}
 
 RUN adduser --disabled-password \
     --gecos "Default user" \
@@ -50,13 +50,14 @@ RUN pip3 install --no-cache-dir --upgrade pip \
 
 # Install Miniforge for multi-arch Xyce support
 ENV CONDA_DIR=/opt/conda
-ENV PATH=$CONDA_DIR/bin:$PATH
+ENV PATH=${CONDA_DIR}/bin:$PATH
 RUN wget -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" \
     && bash Miniforge3.sh -b -p $CONDA_DIR \
-    && rm Miniforge3.sh
-
-RUN mamba install -y -c vlsida-eda xyce \
-    && mamba clean --all -y
+    && rm Miniforge3.sh \
+    && conda init bash \
+    && conda config --system --prepend channels conda-forge \
+    && conda install -y xyce \
+    && conda clean --all -y
 
 
 # Copy flow
@@ -69,7 +70,6 @@ WORKDIR ${HOME}/openmfda_flow
 # Environment
 ENV OPENMFDA_ROOT=${HOME}/openmfda_flow
 ENV PYTHONPATH=${HOME}/openmfda_flow/src
-# Force python command to python3 (system python)
 ENV PYTHON_CMD=python3
 
 CMD ["/bin/bash"]

@@ -10,7 +10,7 @@ output	out;
 wire	connect0,	connect1,	connect2,	connect3;
 
     
-p_serpentine_0_120_30_9	serp0	(.in_fluid(soln1), .out_fluid(connect0));
+p_serpentine_0_120_30_4	serp0	(.in_fluid(soln1), .out_fluid(connect0));
 
 p_serpentine_0_60_30_1	serp1	(.in_fluid(soln2), .out_fluid(connect1));
 

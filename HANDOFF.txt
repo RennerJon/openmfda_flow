@@ -1,0 +1,64 @@
+================================================================================
+OPENMFDA FLOW — AGENT HANDOFF NOTE
+Date: 2026-03-19 (17:40 CST)
+================================================================================
+
+CURRENT STATUS: Flow mostly functional, local Qwen2.5 integration in progress.
+
+--------------------------------------------------------------------------------
+RECENT FIXES APPLIED (in reverse order)
+--------------------------------------------------------------------------------
+
+1. LOCAL QWEN2.5 INTEGRATION (conversation 6c1bf9d7) — IN PROGRESS
+   - User has a Qwen2.5 model running locally.
+   - Serving method and intended use case (OpenMFDA flow vs general scripting)
+     were still being determined at end of conversation.
+   - Next step: identify the endpoint (e.g., Ollama at localhost:11434, LM Studio
+     at localhost:1234, vLLM, llama.cpp server) and wire it into the toolchain.
+
+2. REGEX MODULE ERROR FIX (conversation 17b27c10) — RESOLVED
+   - Root cause: hardcoded `python3` in Makefile instead of $(PYTHON_CMD).
+   - Fix: Makefile updated to use $(PYTHON_CMD) so venv interpreter is used.
+   - The `regex` module is now found correctly when running through make.
+   - High-concentration errors for "Water Sample" may still need re-evaluation
+     now that the correct interpreter is in use.
+
+3. DESIGN GENERATION SCRIPT FIXES (conversation b172e451) — RESOLVED
+   - io_constraints.tcl: pin sizes corrected from {1 1} → {14 14}.
+     Files affected: openmfda_flow.py, openmfda_flow_0.1.py, openmfda_flow_0.2.py
+   - simulation.config: reagent names standardized to use underscores instead
+     of spaces (e.g., "Griess_Reagent_A") to prevent Xyce parsing errors.
+     File affected: tools/gui/app.py
+   - Flow was re-run and design generation + simulation phases completed.
+
+--------------------------------------------------------------------------------
+KEY FILES TO KNOW ABOUT
+--------------------------------------------------------------------------------
+
+src/openmfda_flow/openmfda_flow_0.1.py   — main flow script (currently open)
+flow/scripts/update_design.tcl            — currently active document in editor
+flow/scripts/detail_route.tcl            — routing script (open)
+flow/designs/h.r.3.3/nitrate_water_test/simulation.config  — sim config (open)
+flow/platforms/h.r.3.3/lef/h.r.3.3_merged.lef              — platform LEF (open)
+tools/runners.py                          — runner utilities (open)
+
+--------------------------------------------------------------------------------
+OLDER CONTEXT (lower priority)
+--------------------------------------------------------------------------------
+
+- Xyce plugin (MFXyce_0.0.0.so) was compiled and working as of ~2026-02-17.
+  If simulation fails again, check LD_LIBRARY_PATH and xyce.mk paths in Docker.
+- 3D printing STL generation: interconnect artifact component was removed from
+  the final STL output (as of 2026-03-16). Three distinct device STLs targeted.
+
+--------------------------------------------------------------------------------
+SUGGESTED NEXT STEPS
+--------------------------------------------------------------------------------
+
+1. Finish Qwen2.5 integration: determine serving method, configure endpoint,
+   test against the flow (likely via tools/runners.py or a new LLM utility).
+2. Re-evaluate "Water Sample" high-concentration errors now that the correct
+   Python interpreter is being used end-to-end.
+3. Run a full end-to-end flow on nitrate_water_test to confirm stability.
+
+================================================================================

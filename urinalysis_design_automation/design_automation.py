@@ -339,7 +339,12 @@ def update_flow(assay, num_samples, old_serp, new_serp, serp_num, max_x, zero):
     max_x = edit_file(verilog_file, num_samples, serp_num, old_serp, new_serp, max_x, zero)
    
     # Run Tcl script commands following .def and .v modification 
-    command = f"cd flow && make -e DESIGN={assay} run_tcl_script -B"
+    current_dir = os.path.abspath(os.curdir)
+    # Delete stale pcell LEF to force regeneration from updated verilog
+    import glob
+    for stale_lef in glob.glob(f"flow/results/{assay}/base/*_pcells.lef"):
+        os.remove(stale_lef)
+    command = f"docker run --rm -v {current_dir}:/home/jovyan/openmfda_flow -w /home/jovyan/openmfda_flow/flow openmfda-flow bash -c 'make -e DESIGN={assay} run_tcl_script -B'"
     result = subprocess.run(command, shell=True)
 
     # Print results
@@ -515,7 +520,8 @@ def min_error(i, len_list, layer_list, pitch_list, turn_list, error_condition, a
         # command = f"cp flow/results/{assay}/base/2_2_place_iop.def"
 
         # Run Tcl script commands following .def and .v modification 
-        command = f"cd flow && make -e DESIGN={assay} run_tcl_script"
+        current_dir = os.path.abspath(os.curdir)
+        command = f"docker run --rm -v {current_dir}:/home/jovyan/openmfda_flow -w /home/jovyan/openmfda_flow/flow openmfda-flow bash -c 'make -e DESIGN={assay} run_tcl_script'"
         result = subprocess.run(command, shell=True)
 
         # Print results

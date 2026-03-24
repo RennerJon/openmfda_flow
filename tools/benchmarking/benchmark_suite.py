@@ -21,10 +21,7 @@ def run_benchmark(design, comsol_file, platform="standard"):
     print("Step 1: Running OpenMFDA Simulation...")
     # Using Docker auto-detection from main.py
     cmd = [sys.executable, main_script, "--sim", "--design", design, "--work_dir", f"./benchmarks/{design}"]
-    
-    # Assuming standard project structure or simple arguments.
-    # If the design is in benchmarks/ folder, be careful about paths.
-    # Assuming the user runs this from the project root for now
+  
     
     try:
         subprocess.run(cmd, check=True)
@@ -32,14 +29,6 @@ def run_benchmark(design, comsol_file, platform="standard"):
         print(f"Simulation failed: {e}")
         return
 
-    # 2. Find Result File
-    # Xyce output usually defaults to [design]_xyceOut.csv in the results dir
-    # main.py defaults to using 'tools/simulation' logic which puts results in 'results' or 'work_dir'
-    
-    # Based on runMFDASim.py: csv_out = f"{prn_dir}/{design_name}_xyceOut.csv" where prn_dir is in work_dir
-    # We passed work_dir as ./benchmarks/{design}
-    
-    # Let's grep for the output file
     xyce_out = None
     search_dir = f"./benchmarks/{design}"
     if os.path.exists(search_dir):

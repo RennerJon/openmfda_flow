@@ -105,9 +105,11 @@ def main(assay, platform, num_samples, input_dict, error_condition, start_time, 
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     src_path = os.path.join(repo_root, "src")
     env["PYTHONPATH"] = env.get("PYTHONPATH", "") + os.pathsep + src_path
+    if "OPENMFDA_ROOT" not in env:
+        env["OPENMFDA_ROOT"] = repo_root
     
     print(f"Running subprocess with PYTHONPATH including: {src_path}")
-    result = subprocess.run(["python3", f"flow/designs/{platform}/{assay}/{assay}.py"], env=env)
+    result = subprocess.run([sys.executable, f"flow/designs/{platform}/{assay}/{assay}.py"], env=env)
     
     if result.returncode != 0:
         print("Flow execution failed. Aborting optimization.")

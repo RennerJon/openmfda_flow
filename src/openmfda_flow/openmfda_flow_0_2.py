@@ -89,7 +89,7 @@ def write_pin_constraints(io_filename, pin_names, layer, startx=960, starty=660)
                 xpos = startx+i*90
                 ypos = starty+j*90
                 if pin_names[j][i]:
-                    print(f"place_pin -pin_name {col} -layer {layer} -location {{ {xpos} {ypos} }} -pin_size {{1 1}}", file=f)
+                    print(f"place_pin -pin_name {col} -layer {layer} -location {{ {xpos} {ypos} }} -pin_size {{14 14}}", file=f)
 
 ################ SDC constraints ################
 def write_sdc_constraints(sdc_filename, top_name="top"):

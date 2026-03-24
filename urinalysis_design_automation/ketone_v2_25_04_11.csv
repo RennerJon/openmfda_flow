@@ -1,0 +1,5 @@
+Name,Number of Samples,Runtime [s],Time to Best Design [s],Die Area,Design Area,% Area Utilization,Maximum X Coordinate,Total Wire Length,Max Wire Length,Max Wire Location,Mean Wire Length,Median Wire Length,Concentrations,Concentration Error [%],Channel Volume [mL],Required Volume [mL]
+ketone_v2,2,3321.626528978348,3321.5310769081116," 0 0 2550 1590
+",44100,1%,150000," 1470 um.
+",6.272,out,3.696800000000001,3.3080000000000034,4.9999999999999996e-05,94.33422434,3.31865856e-05,3.31865856e-05
+,,,,,,,,,,,,,4.9999999999999996e-05,93.90936841999999,1.8436991999999999e-06,0.0005973585408

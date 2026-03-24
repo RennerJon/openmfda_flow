@@ -40,11 +40,8 @@ if { [info exists ::env(OR_K)]} {
   append additional_args " -or_k $::env(OR_K)"
 }
 
-if { [info exists ::env(MIN_ROUTING_LAYER)]} {
-  append additional_args " -bottom_routing_layer $::env(MIN_ROUTING_LAYER)"
-}
-if { [info exists ::env(MAX_ROUTING_LAYER)]} {
-  append additional_args " -top_routing_layer $::env(MAX_ROUTING_LAYER)"
+if { [info exists ::env(MIN_ROUTING_LAYER)] && [info exists ::env(MAX_ROUTING_LAYER)]} {
+  set_routing_layers -signal $::env(MIN_ROUTING_LAYER)-$::env(MAX_ROUTING_LAYER)
 }
 if { [info exists ::env(VIA_IN_PIN_MIN_LAYER)]} {
   append additional_args " -droute_via_in_pin_bottom_layer_num $::env(VIA_IN_PIN_MIN_LAYER)"

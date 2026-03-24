@@ -34,7 +34,7 @@ ROUTE_MAP_OUT_REROUTE = $(RESULTS_DIR)/7_$(DESIGN)_route_nets.json
 
 $(RESULTS_DIR)/$(DESIGN)_reroute.scad: $(RESULTS_DIR)/$(SCAD_DEF) $(LIBRARY_DEPS)
 	mkdir -p "$(RESULTS_DIR)"
-	$(TIME_CMD) python3 $(SCAD_SCRIPT) $(SCAD_ARGS) \
+	$(TIME_CMD) $(PYTHON_CMD) $(SCAD_SCRIPT) $(SCAD_ARGS) \
 		--def_file $< \
         --design $(DESIGN) \
 		--length_out $(LENGTH_FILE_REROUTE) \
@@ -44,7 +44,7 @@ $(RESULTS_DIR)/$(DESIGN)_reroute.scad: $(RESULTS_DIR)/$(SCAD_DEF) $(LIBRARY_DEPS
 
 $(RESULTS_DIR)/xyceOut_1.csv: $(RESULTS_DIR)/$(DESIGN)_reroute.scad $(SIMULATION_CONFIG) $(RESULTS_DIR)/xyce_run.config
 	mkdir -p $(RESULTS_DIR)/simulation
-	$(TIME_CMD) python3 $(SIMULATION_SCRIPT) \
+	$(TIME_CMD) $(PYTHON_CMD) $(SIMULATION_SCRIPT) \
 		$(SIMULATION_ARGS) \
 		--output_dir $(RESULTS_DIR) \
 		--netlist $(VERILOG_FILES) \
